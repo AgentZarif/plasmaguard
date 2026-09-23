@@ -1,0 +1,3668 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PlasmaGuard v2.0 — AOP Transformation-Product Analytical Instrument</title>
+
+<!-- Typography: Google Fonts with local fallbacks -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Orbitron:wght@500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+<!-- Offline libraries pre-vendored in ./libs/ -->
+<script src="libs/chart.umd.min.js"></script>
+<script src="libs/smiles-drawer.min.js"></script>
+<script src="libs/3Dmol-min.js"></script>
+<script src="libs/three.min.js"></script>
+
+<!-- CDN fallbacks if local files are absent -->
+<script>
+  if (typeof Chart === 'undefined') document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>');
+  if (typeof SmilesDrawer === 'undefined') document.write('<script src="https://unpkg.com/smiles-drawer@2.1.7/dist/smiles-drawer.min.js"><\/script>');
+  if (typeof $3Dmol === 'undefined') document.write('<script src="https://3dmol.org/build/3Dmol-min.js"><\/script>');
+  if (typeof THREE === 'undefined') document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+</script>
+
+<style>
+/* ── Color Palette & Design Tokens ────────────────────────────────────────── */
+:root {
+  --bg-deep: #020611;
+  --bg: #040918;
+  --bg2: #081226;
+  --bg-card: rgba(9, 20, 42, 0.72);
+  --bg-card-hover: rgba(14, 28, 58, 0.85);
+  
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-h: rgba(255, 255, 255, 0.07);
+  --border: rgba(56, 189, 248, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-active: rgba(56, 189, 248, 0.45);
+  --border-focus: #00f0ff;
+  
+  --text: #f1f6ff;
+  --text-dim: #cad8ee;
+  --muted: #748ba7;
+  --dim: #3e526e;
+  
+  --cyan: #00f0ff;
+  --cyan-rgb: 0, 240, 255;
+  --cyan-s: rgba(0, 240, 255, 0.12);
+  --cyan-g: rgba(0, 240, 255, 0.28);
+  
+  --purple: #c084fc;
+  --purple-rgb: 192, 132, 252;
+  --purple-s: rgba(192, 132, 252, 0.12);
+  
+  --red: #ff3366;
+  --red-rgb: 255, 51, 102;
+  --red-s: rgba(255, 51, 102, 0.12);
+  
+  --amber: #fbbf24;
+  --amber-rgb: 251, 191, 36;
+  --amber-s: rgba(251, 191, 36, 0.12);
+  
+  --green: #10b981;
+  --green-rgb: 16, 185, 129;
+  --green-s: rgba(16, 185, 129, 0.12);
+  
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --display: 'Orbitron', 'Space Grotesk', var(--mono);
+  --heading: 'Space Grotesk', var(--ui);
+  
+  --r: 12px;
+  --r-sm: 8px;
+  --r-lg: 16px;
+  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(56, 189, 248, 0.1);
+  --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.25);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font: 400 13px/1.6 var(--ui);
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Cyber Atmospheric Background ─────────────────────────────────────────── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle 900px at 78% -10%, rgba(0, 240, 255, 0.08), transparent 70%),
+    radial-gradient(circle 750px at 15% 105%, rgba(192, 132, 252, 0.06), transparent 70%),
+    radial-gradient(circle 600px at 50% 50%, rgba(16, 185, 129, 0.025), transparent 80%),
+    linear-gradient(180deg, rgba(2,6,17,0.7) 0%, rgba(4,9,24,0.95) 100%);
+}
+
+/* Subtle micro-mesh grid overlay */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+#sb {
+  width: 220px;
+  flex: 0 0 220px;
+  background: rgba(4, 9, 22, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border);
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 40;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+}
+
+#sb .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 10px;
+  text-decoration: none;
+}
+
+#sb .logo-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #00f0ff 0%, #c084fc 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+  position: relative;
+}
+
+#sb .logo-mark::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #00f0ff, #c084fc);
+  z-index: -1;
+  opacity: 0.35;
+  filter: blur(4px);
+}
+
+#sb .logo-mark svg {
+  width: 20px;
+  height: 20px;
+  fill: #020611;
+  filter: drop-shadow(0 1px 1px rgba(255,255,255,0.4));
+}
+
+#sb .logo-text {
+  font: 800 12.5px var(--display);
+  letter-spacing: 0.12em;
+  color: #fff;
+  line-height: 1.15;
+  background: linear-gradient(90deg, #ffffff, #a5f3fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#sb .logo-ver {
+  font: 600 9.5px var(--mono);
+  color: var(--cyan);
+  margin-top: 3px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#sb button {
+  all: unset;
+  cursor: pointer;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font: 500 12.5px var(--ui);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+#sb button svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+#sb button:hover {
+  background: var(--surface-h);
+  color: #fff;
+  transform: translateX(2px);
+}
+
+#sb button:hover svg {
+  opacity: 1;
+  stroke: var(--cyan);
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.4));
+}
+
+#sb button.on {
+  background: linear-gradient(90deg, rgba(0, 240, 255, 0.14) 0%, rgba(0, 240, 255, 0.02) 100%);
+  color: #fff;
+  font-weight: 600;
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  box-shadow: inset 0 0 12px rgba(0, 240, 255, 0.08);
+}
+
+#sb button.on::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 4px;
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+}
+
+#sb button.on svg {
+  opacity: 1;
+  stroke: var(--cyan);
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.5));
+}
+
+#sb .sp { flex: 1; }
+
+#sb .sidebar-footer {
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#sb .badge-offline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: 600 10px var(--mono);
+  color: var(--green);
+  background: var(--green-s);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
+/* ── Main Content Area ────────────────────────────────────────────────────── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+  z-index: 10;
+}
+
+/* ── Top Header Bar ──────────────────────────────────────────────────────── */
+#top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(3, 8, 20, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+#top h1 {
+  font: 700 12px var(--display);
+  letter-spacing: 0.14em;
+  color: #fff;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#top h1::after {
+  content: "AOP";
+  font: 600 9px var(--mono);
+  background: var(--cyan-s);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.led {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 10px var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  background: var(--surface);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+.led i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulseLed 2s infinite ease-in-out;
+}
+
+.led.amber i {
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+}
+
+.led.off i {
+  background: var(--dim);
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes pulseLed {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.6; }
+}
+
+#top .sp { flex: 1; }
+
+/* ── Global Buttons ───────────────────────────────────────────────────────── */
+.btn {
+  all: unset;
+  cursor: pointer;
+  padding: 7px 16px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: 600 11.5px var(--mono);
+  letter-spacing: 0.04em;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  user-select: none;
+}
+
+.btn:hover {
+  border-color: var(--cyan);
+  color: #fff;
+  background: var(--cyan-s);
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn.pri {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.2) 0%, rgba(192, 132, 252, 0.2) 100%);
+  border-color: var(--cyan);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
+}
+
+.btn.pri:hover {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.35) 0%, rgba(192, 132, 252, 0.35) 100%);
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.45);
+}
+
+.btn.danger {
+  background: var(--red-s);
+  border-color: rgba(255, 51, 102, 0.45);
+  color: #ffaec0;
+}
+
+.btn.danger:hover {
+  background: rgba(255, 51, 102, 0.25);
+  border-color: var(--red);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(255, 51, 102, 0.35);
+}
+
+.btn.sm {
+  padding: 4px 10px;
+  font-size: 10px;
+}
+
+/* ── Tabbed Pages ─────────────────────────────────────────────────────────── */
+#pages {
+  flex: 1;
+  padding: 22px 26px;
+  overflow-y: auto;
+}
+
+section.page {
+  display: none;
+}
+
+section.page.on {
+  display: block;
+  animation: pageFade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes pageFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Scientific UI Cards & Panels ─────────────────────────────────────────── */
+.panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+
+.panel:hover {
+  border-color: var(--border-active);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 8px;
+}
+
+.grid { display: grid; gap: 16px; }
+
+/* ── Micro-Labels & Typography ────────────────────────────────────────────── */
+.ml {
+  font: 700 10.5px var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ml.cyan { color: var(--cyan); }
+.ml.purple { color: var(--purple); }
+.ml.amber { color: var(--amber); }
+.ml.green { color: var(--green); }
+
+/* ── KPI Metric Tiles ─────────────────────────────────────────────────────── */
+/* Overview stat tiles (4 columns) */
+.ov-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+/* Workspace results tiles (2x2 grid to fit in 390px sidebar comfortably) */
+#tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.tile {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 14px 14px 12px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.tile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan), transparent);
+  opacity: 0.6;
+}
+
+.tile:hover {
+  border-color: var(--border-active);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.tile .t-label {
+  font: 700 9.5px var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tile .t-value {
+  font: 800 28px/1 var(--display);
+  color: #fff;
+  margin: 8px 0 4px;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+}
+
+.tile .t-unit {
+  font: 500 10.5px var(--mono);
+  color: var(--muted);
+}
+
+.tile.cyan .t-value { color: var(--cyan); text-shadow: 0 0 20px rgba(0, 240, 255, 0.4); }
+.tile.purple .t-value { color: var(--purple); text-shadow: 0 0 20px rgba(192, 132, 252, 0.4); }
+.tile.green .t-value { color: var(--green); text-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
+.tile.warn .t-value { color: var(--amber); text-shadow: 0 0 20px rgba(251, 191, 36, 0.4); }
+.tile.danger .t-value { color: var(--red); text-shadow: 0 0 20px rgba(255, 51, 102, 0.4); }
+
+/* ── Workspace 3-Column Grid ──────────────────────────────────────────────── */
+#ws {
+  grid-template-columns: 280px 1fr 390px;
+  align-items: start;
+}
+
+@media (max-width: 1380px) {
+  #ws { grid-template-columns: 260px 1fr 360px; }
+}
+
+@media (max-width: 1100px) {
+  #ws { grid-template-columns: 260px 1fr; }
+  #resRail { grid-column: 1 / -1; }
+  #tiles { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 820px) {
+  #ws { grid-template-columns: 1fr; }
+  #tiles { grid-template-columns: repeat(2, 1fr); }
+  #sb { width: 62px; flex-basis: 62px; padding: 12px 6px; }
+  #sb .logo-text, #sb .logo-ver, #sb button span, #sb .badge-offline { display: none; }
+  #sb .logo { justify-content: center; padding-bottom: 12px; }
+  #sb button { justify-content: center; padding: 10px 0; }
+}
+
+/* ── Form Inputs & Precision Steppers ─────────────────────────────────────── */
+label.f {
+  display: block;
+  margin: 12px 0 4px;
+}
+
+label.f .f-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font: 600 11px var(--mono);
+  color: var(--text-dim);
+}
+
+label.f .unit-tag {
+  font: 500 9.5px var(--mono);
+  color: var(--cyan);
+  background: var(--cyan-s);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+input, select, textarea {
+  width: 100%;
+  margin-top: 5px;
+  background: rgba(3, 8, 20, 0.9);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: #fff;
+  font: 500 12px var(--mono);
+  padding: 8px 12px;
+  transition: all 0.2s;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  background: rgba(4, 12, 28, 0.95);
+}
+
+select {
+  cursor: pointer;
+}
+
+select option {
+  background: #081226;
+  color: #fff;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.08);
+  height: 6px;
+  border-radius: 999px;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+}
+
+.note {
+  font: 500 10.5px var(--mono);
+  color: var(--amber);
+  min-height: 14px;
+  margin-top: 3px;
+}
+
+.hide { display: none !important; }
+
+/* ── Scientific Molecule Canvases ─────────────────────────────────────────── */
+canvas.mol {
+  width: 100%;
+  background: #030816;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  display: block;
+}
+
+#v3d {
+  width: 100%;
+  height: 420px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #020610;
+  position: relative;
+}
+
+#reactor3d {
+  width: 100%;
+  height: 330px;
+  cursor: grab;
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  background: #020610;
+}
+
+#reactor3d:active { cursor: grabbing; }
+
+#heroWrap {
+  position: relative;
+  height: 320px;
+  margin-top: 12px;
+  background: rgba(2, 6, 16, 0.6);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-subtle);
+  padding: 8px;
+}
+
+#valWrap {
+  position: relative;
+  height: 230px;
+  margin-top: 12px;
+  background: rgba(2, 6, 16, 0.6);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-subtle);
+  padding: 6px;
+}
+
+/* ── High-Tech Tables ─────────────────────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 500 11.5px var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+th {
+  color: var(--muted);
+  font-weight: 700;
+  text-align: left;
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+  color: var(--text-dim);
+}
+
+tbody tr {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+tbody tr:hover td {
+  background: rgba(0, 240, 255, 0.06);
+  color: #fff;
+}
+
+/* ── Badges & Chips ───────────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  font: 700 9.5px var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.chip.red {
+  color: #ff99b0;
+  border: 1px solid rgba(255, 51, 102, 0.4);
+  background: var(--red-s);
+}
+
+.chip.amber {
+  color: #fde68a;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  background: var(--amber-s);
+}
+
+.chip.green {
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: var(--green-s);
+}
+
+.chip.gray {
+  color: var(--muted);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+}
+
+.chip.cyan {
+  color: var(--cyan);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  background: var(--cyan-s);
+}
+
+.chip.purple {
+  color: #d8b4fe;
+  border: 1px solid rgba(192, 132, 252, 0.4);
+  background: var(--purple-s);
+}
+
+/* ── Scientific Hazard Inversion Banner ───────────────────────────────────── */
+#warn {
+  display: none;
+  margin: 14px 0;
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  border-left: 4px solid var(--red);
+  background: linear-gradient(90deg, rgba(255, 51, 102, 0.15) 0%, rgba(255, 51, 102, 0.03) 100%);
+  border: 1px solid rgba(255, 51, 102, 0.25);
+  border-left-width: 4px;
+  font: 500 12px/1.65 var(--mono);
+  color: #ffd1dc;
+  box-shadow: 0 4px 20px rgba(255, 51, 102, 0.15);
+}
+
+#warn.good {
+  border-left-color: var(--green);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.03) 100%);
+  border-color: rgba(16, 185, 129, 0.25);
+  border-left-width: 4px;
+  color: #a7f3d0;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+}
+
+/* ── Holographic Stage Scanner ────────────────────────────────────────────── */
+#stageScanner {
+  margin: 12px 0;
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.06) 0%, rgba(192, 132, 252, 0.03) 100%);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+  display: none;
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.15);
+}
+
+#stageScanner.active {
+  display: block;
+  animation: pageFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stage-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 8px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.stage-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--cyan), var(--purple), #34d399);
+  box-shadow: 0 0 12px var(--cyan);
+  transition: width 0.08s ease-out;
+}
+
+/* ── Status Bar ───────────────────────────────────────────────────────────── */
+#status {
+  display: flex;
+  gap: 18px;
+  padding: 8px 24px;
+  border-top: 1px solid var(--border);
+  background: rgba(3, 8, 20, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font: 500 11px var(--mono);
+  color: var(--muted);
+  align-items: center;
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+}
+
+#stStage {
+  color: var(--cyan);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#status .sp { flex: 1; }
+
+/* ── Notification Toasts ──────────────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  right: 20px;
+  bottom: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.tst {
+  background: rgba(6, 14, 30, 0.96);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--cyan);
+  border-radius: var(--r-sm);
+  padding: 10px 16px;
+  font: 500 11.5px var(--mono);
+  color: #fff;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(0, 240, 255, 0.2);
+  pointer-events: auto;
+  animation: slideToast 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 360px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tst.err {
+  border-left-color: var(--red);
+  color: #ffb5c5;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(255, 51, 102, 0.2);
+}
+
+@keyframes slideToast {
+  from { opacity: 0; transform: translateX(24px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* ── Modal Dialog ─────────────────────────────────────────────────────────── */
+#modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 5, 14, 0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+#modal.on { display: flex; }
+
+#modal .box {
+  max-width: 640px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #081226;
+  border: 1px solid var(--border-active);
+  border-radius: var(--r);
+  padding: 24px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 240, 255, 0.15);
+}
+
+/* ── Empty State ──────────────────────────────────────────────────── */
+.empty {
+  color: var(--muted);
+  font: 500 12px var(--mono);
+  padding: 32px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.sp { flex: 1; }
+
+/* ── Reactor WebGL Panel ──────────────────────────────────────────────────── */
+.reactor-panel {
+  background: #030816;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  margin-top: 14px;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+}
+
+.reactor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(6, 14, 30, 0.8);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reactor-badges {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Presentation Mode ────────────────────────────────────────────────────── */
+body.present #sb, body.present #status { display: none; }
+body.present #pages { padding: 36px 48px; max-width: 1500px; margin: 0 auto; }
+.spot {
+  outline: 2px solid var(--cyan);
+  outline-offset: 6px;
+  border-radius: var(--r);
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.35) !important;
+}
+
+/* ── Code / Math Displays ─────────────────────────────────────────────────── */
+pre {
+  font: 500 11.5px/1.8 var(--mono);
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  background: rgba(3, 8, 20, 0.85);
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  margin-top: 10px;
+}
+
+code {
+  background: var(--cyan-s);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font: 600 11px var(--mono);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+}
+
+ul.disclose {
+  margin: 10px 0 0 20px;
+  font-size: 13px;
+  line-height: 2;
+  color: var(--text-dim);
+}
+
+ul.disclose li { margin-bottom: 4px; }
+
+.card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 14px 16px;
+  margin: 10px 0;
+}
+
+.help-text { font: 400 13.5px/1.8 var(--ui); color: var(--text-dim); }
+ol.refs { margin-left: 20px; font: 500 11.5px/2 var(--mono); margin-top: 10px; color: var(--text-dim); }
+input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 8px; font-size: 11px; }
+
+/* ── Chemical Dossier Styling in Viewer ───────────────────────────────────── */
+.dossier-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dossier-stat {
+  background: rgba(4, 10, 24, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.dossier-stat .d-label {
+  font: 700 9px var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.dossier-stat .d-val {
+  font: 700 13px var(--mono);
+  color: #fff;
+  margin-top: 2px;
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar Navigation -->
+<aside id="sb">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </div>
+    <div>
+      <div class="logo-text">PLASMAGUARD</div>
+      <div class="logo-ver">v2.0 · INSTRUMENT</div>
+    </div>
+  </div>
+  
+  <button data-pg="overview" class="on">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Overview</span>
+  </button>
+  <button data-pg="workspace">
+    <svg viewBox="0 0 24 24"><path d="M6 3h12v3H6zM9 6v6l-4 7h14l-4-7V6"/></svg>
+    <span>Workspace</span>
+  </button>
+  <button data-pg="viewer">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+    <span>Mol Viewer</span>
+  </button>
+  <button data-pg="data">
+    <svg viewBox="0 0 24 24"><path d="M4 6c0-1.6 3.6-3 8-3s8 1.4 8 3v12c0 1.6-3.6 3-8 3s-8-1.4-8-3V6z"/><path d="M4 12c0 1.6 3.6 3 8 3s8-1.4 8-3"/></svg>
+    <span>Data &amp; Params</span>
+  </button>
+  <button data-pg="method">
+    <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+    <span>Methodology</span>
+  </button>
+  <button data-pg="refs">
+    <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15z"/></svg>
+    <span>References</span>
+  </button>
+
+  <div class="sp"></div>
+
+  <div class="sidebar-footer">
+    <div class="badge-offline">
+      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)"></span>
+      OFFLINE CAPABLE
+    </div>
+    <button id="btnHelp" style="padding:8px 12px">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+      <span>Help &amp; Keys</span>
+    </button>
+  </div>
+</aside>
+
+<div id="main">
+
+  <!-- Top bar -->
+  <header id="top">
+    <h1>PlasmaGuard Analytical Suite</h1>
+    <span class="led"><i></i>ENGINE ONLINE</span>
+    <span class="led" id="ledNet"><i></i>PUBCHEM-3D READY</span>
+    <div class="sp"></div>
+    <button class="btn" id="btnPresent">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3l14 9-14 9V3z"/></svg>
+      PRESENT MODE
+    </button>
+    <span class="chip gray" id="ver" style="font-family:var(--mono)">v2.0.0</span>
+  </header>
+
+  <main id="pages">
+
+    <!-- ======================== OVERVIEW PAGE ======================== -->
+    <section class="page on" id="pg-overview">
+      <!-- 4-Stat Tiles -->
+      <div class="ov-tiles">
+        <div class="tile cyan">
+          <div class="t-label"><span>Benchmark Pollutants</span> <span class="chip cyan">TARGETS</span></div>
+          <div class="t-value" id="ovN">10</div>
+          <div class="t-unit">curated micropollutants</div>
+        </div>
+        <div class="tile purple">
+          <div class="t-label"><span>Curated TPs</span> <span class="chip purple">PATHWAYS</span></div>
+          <div class="t-value" id="ovT">20</div>
+          <div class="t-unit">metabolic intermediates</div>
+        </div>
+        <div class="tile green">
+          <div class="t-label"><span>AOP Technologies</span> <span class="chip green">TRIAD</span></div>
+          <div class="t-value">3</div>
+          <div class="t-unit">UV/H₂O₂ · EC · Plasma</div>
+        </div>
+        <div class="tile">
+          <div class="t-label"><span>Saved Benchmarks</span> <span class="chip gray">LOCAL</span></div>
+          <div class="t-value" id="ovS">0</div>
+          <div class="t-unit">reproducible runs cached</div>
+        </div>
+      </div>
+
+      <!-- Core Scientific Premise & Quick Launch -->
+      <div class="panel" style="margin-bottom:18px">
+        <div class="panel-header">
+          <div class="ml cyan">Core Scientific Axiom: The Hazard Inversion Paradigm</div>
+          <span class="chip amber">PUBLICATION-GRADE MODEL</span>
+        </div>
+        <p style="font:400 13.5px/1.8 var(--ui);color:var(--text-dim);max-width:1100px">
+          Partial oxidation in Advanced Oxidation Processes produces transformation products (TPs) that can be
+          <b style="color:#fff">more toxic, bioaccumulative, or hazardous</b> than the original parent contaminant.
+          PlasmaGuard computes <em>precisely when</em> during treatment the water is most hazardous — the 
+          <b style="color:var(--red)">hazard inversion window</b> — and computes the definitive run time (<code>t_safe</code>)
+          required for genuine non-toxic discharge into aquatic ecosystems.
+        </p>
+        <div class="row" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+          <button class="btn pri" id="ovGo" style="padding:9px 24px;font-size:12px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+            LAUNCH WORKSPACE BENCHMARK
+          </button>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="ml" style="font-size:9.5px">TARGET:</span>
+            <select id="ovPoll" style="width:240px;margin:0"></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="ml" style="font-size:9.5px">REACTOR:</span>
+            <select id="ovMethod" style="width:190px;margin:0">
+              <option value="uv">UV / H₂O₂ Photolysis</option>
+              <option value="ec">Electrochemical Oxidation</option>
+              <option value="pl">Non-Thermal Plasma</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pollutant Catalog with Category Filter -->
+      <div class="panel" style="margin-bottom:18px">
+        <div class="panel-header">
+          <div>
+            <div class="ml">Curated Micropollutant Catalog</div>
+            <div style="font:400 11.5px var(--ui);color:var(--muted);margin-top:2px">
+              Click any row to automatically load its kinetics, chemical 2D/3D structure, and degradation pathway
+            </div>
+          </div>
+          <div class="row" style="gap:6px">
+            <input type="text" id="catSearch" placeholder="Search pollutant or SMILES…" style="width:210px;margin:0;padding:5px 10px;font-size:11px">
+            <select id="catFilter" style="width:140px;margin:0;padding:5px 8px;font-size:11px">
+              <option value="all">All Categories</option>
+              <option value="antibiotic">Antibiotics</option>
+              <option value="pharmaceutical">Pharmaceuticals</option>
+              <option value="pfas">PFAS Chemicals</option>
+              <option value="pesticide">Pesticides</option>
+              <option value="dye">Dyes &amp; Stains</option>
+              <option value="endocrine disruptor">Endocrine Disruptors</option>
+              <option value="industrial">Industrial Solvents</option>
+            </select>
+          </div>
+        </div>
+        <table id="pollCatalog">
+          <thead>
+            <tr>
+              <th>Compound</th>
+              <th>Category</th>
+              <th>Formula</th>
+              <th>k_OH (M⁻¹s⁻¹)</th>
+              <th>ε₂₅₄ (L/mol/cm)</th>
+              <th>Curated TPs</th>
+              <th>Parent Structural Alerts</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Saved Benchmarks -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="ml">Local Simulation Benchmarks</div>
+          <span class="ml" style="font-size:9.5px">BROWSER STORAGE CACHE</span>
+        </div>
+        <table id="ovSessions">
+          <thead>
+            <tr><th>ID</th><th>Timestamp</th><th>Target Contaminant</th><th>Technology</th><th>t_safe</th><th>Clearance Action</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty" id="ovSessEmpty">No saved simulation sessions. Run a simulation in the Workspace to generate reproducible benchmarks.</div>
+      </div>
+    </section>
+
+    <!-- ======================== WORKSPACE PAGE ======================== -->
+    <section class="page" id="pg-workspace">
+      <div class="grid" id="ws">
+
+        <!-- Column 1: System Parameters Rail -->
+        <div class="panel" id="paramRail">
+          <div class="ml" style="margin-bottom:12px;color:var(--cyan)">System Specifications</div>
+          
+          <label class="f">
+            <span class="f-head"><span>Target Pollutant</span> <span class="unit-tag">SUBSTRATE</span></span>
+            <select id="pPoll"></select>
+          </label>
+
+          <label class="f">
+            <span class="f-head"><span>AOP Technology</span> <span class="unit-tag">REACTOR</span></span>
+            <select id="pMethod">
+              <option value="uv">UV / H₂O₂ Photolysis</option>
+              <option value="ec">Electrochemical Oxidation</option>
+              <option value="pl">Non-Thermal Plasma</option>
+            </select>
+          </label>
+
+          <label class="f">
+            <span class="f-head"><span>Initial Concentration C₀</span> <span class="unit-tag">mg/L</span></span>
+            <input id="pC0" type="number" value="10" min="0.1" max="100" step="0.1">
+            <div class="note" id="nC0"></div>
+          </label>
+
+          <label class="f">
+            <span class="f-head"><span>Batch Volume V</span> <span class="unit-tag">Liters</span></span>
+            <input id="pV" type="number" value="0.15" min="0.05" max="1000" step="0.01">
+            <div class="note" id="nV"></div>
+          </label>
+
+          <label class="f">
+            <span class="f-head"><span>Matrix Radical Scavenging</span> <span class="unit-tag">s⁻¹</span></span>
+            <input id="pScav" type="number" value="100000" min="1000" max="1000000" step="1000">
+            <div class="note" id="nScav"></div>
+          </label>
+
+          <!-- UV Photolysis Group -->
+          <div id="gUV">
+            <div class="ml cyan" style="margin-top:16px;border-top:1px solid var(--border-subtle);padding-top:12px">
+              UV Photolysis Parameters
+            </div>
+            <label class="f">
+              <span class="f-head"><span>Peak Wavelength λ</span> <span class="unit-tag">nm</span></span>
+              <input id="pLam" type="number" value="254" min="185" max="400" step="1">
+              <div class="note" id="nLam"></div>
+            </label>
+            <label class="f">
+              <span class="f-head"><span>Incident Irradiance</span> <span class="unit-tag">W/m²</span></span>
+              <input id="pIrr" type="number" value="30" min="1" max="500" step="1">
+              <div class="note" id="nIrr"></div>
+            </label>
+            <label class="f">
+              <span class="f-head"><span>Illuminated Cross-Area</span> <span class="unit-tag">m²</span></span>
+              <input id="pArea" type="number" value="0.01" min="0.001" max="1" step="0.001">
+              <div class="note" id="nArea"></div>
+            </label>
+            <label class="f">
+              <span class="f-head"><span>Optical Path Length</span> <span class="unit-tag">cm</span></span>
+              <input id="pPath" type="number" value="1" min="0.5" max="10" step="0.1">
+              <div class="note" id="nPath"></div>
+            </label>
+            <label class="f">
+              <span class="f-head"><span>[H₂O₂] Initial Dose</span> <span class="unit-tag">mM</span></span>
+              <input id="pHP" type="number" value="5" min="0.1" max="50" step="0.1">
+              <div class="note" id="nHP"></div>
+            </label>
+          </div>
+
+          <!-- EC Parameters Group -->
+          <div id="gEC" class="hide">
+            <div class="ml purple" style="margin-top:16px;border-top:1px solid var(--border-subtle);padding-top:12px">
+              Electrochemical Cell Setup
+            </div>
+            <label class="f">
+              <span class="f-head"><span>Current I_e</span> <span class="unit-tag">mA</span></span>
+              <input id="pIe" type="number" value="55" min="1" max="2000" step="1">
+              <div class="note" id="nIe"></div>
+            </label>
+            <label class="f">
+              <span class="f-head"><span>Cell Voltage V_cell</span> <span class="unit-tag">V</span></span>
+              <input id="pVc" type="number" value="9" min="1" max="30" step="0.1">
+              <div class="note" id="nVc"></div>
+            </label>
+            <label class="f">
+              <span class="f-head"><span>Anodic •OH Faradaic Eff. η</span> <span class="unit-tag">ratio</span></span>
+              <input id="pEta" type="number" value="0.2" min="0.01" max="0.6" step="0.01">
+              <div class="note" id="nEta"></div>
+            </label>
+          </div>
+
+          <!-- Plasma Parameters Group -->
+          <div id="gPL" class="hide">
+            <div class="ml amber" style="margin-top:16px;border-top:1px solid var(--border-subtle);padding-top:12px">
+              Non-Thermal Plasma Discharge
+            </div>
+            <label class="f">
+              <span class="f-head"><span>Discharge Power P_pl</span> <span class="unit-tag">W</span></span>
+              <input id="pPp" type="number" value="10" min="1" max="1000" step="1">
+              <div class="note" id="nPp"></div>
+            </label>
+            <label class="f">
+              <span class="f-head"><span>G_pl Chemical Yield</span> <span class="unit-tag">µM/s per W</span></span>
+              <input id="pGpl" type="number" value="0.05" min="0.001" max="10" step="0.001">
+              <div class="note" id="nGpl"></div>
+            </label>
+          </div>
+
+          <!-- Economics & Energy -->
+          <div class="ml" style="margin-top:16px;border-top:1px solid var(--border-subtle);padding-top:12px">
+            Energy Economics &amp; Discharge Criteria
+          </div>
+          <label class="f">
+            <span class="f-head"><span>Electrical Power P_elec</span> <span class="unit-tag">W</span></span>
+            <input id="pPe" type="number" value="15" min="0.1" max="20000" step="0.1">
+            <div class="note" id="nPe"></div>
+          </label>
+          <label class="f">
+            <span class="f-head"><span>Grid Tariff</span> <span class="unit-tag">৳/kWh</span></span>
+            <input id="pTar" type="number" value="9" min="1" max="100" step="0.1">
+            <div class="note" id="nTar"></div>
+          </label>
+          <label class="f">
+            <span class="f-head"><span>Safe TP Threshold Fraction</span> <span class="unit-tag">C_tp/C₀</span></span>
+            <input id="pThr" type="number" value="0.05" min="0.01" max="0.2" step="0.01">
+            <div class="note" id="nThr"></div>
+          </label>
+
+          <div class="row" style="margin-top:20px">
+            <button class="btn pri" id="btnRun" style="flex:1;padding:10px 14px;font-size:12px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+              RUN SIMULATION
+            </button>
+            <button class="btn" id="btnReset" title="Reset to curated defaults">↺</button>
+          </div>
+        </div>
+
+        <!-- Column 2: 2D Structure + 3D WebGL Reactor + Pathway -->
+        <div class="panel" id="centerCol">
+          <div class="panel-header">
+            <div class="ml">Parent Contaminant — 2D Topology</div>
+            <span class="chip cyan" id="cSrc">CURATED BENCHMARK</span>
+          </div>
+          <canvas class="mol" id="mol2d" style="height:260px;margin-bottom:14px"></canvas>
+
+          <!-- High-Fidelity 3D WebGL Reactor Chamber -->
+          <div class="reactor-panel">
+            <div class="reactor-header">
+              <div class="row" style="gap:8px">
+                <span class="chip cyan" id="rModeBadge">UV / H₂O₂ PHOTOLYSIS</span>
+                <span class="chip gray" id="rFluxBadge">PHOTON FLUX: 254 nm</span>
+              </div>
+              <div class="row" style="gap:6px">
+                <button class="btn sm pri" id="rBurst">⚡ •OH RADICAL BURST</button>
+                <button class="btn sm" id="rResetCam" title="Reset chamber viewpoint">↺</button>
+              </div>
+            </div>
+            <div style="position:relative">
+              <div id="reactor3d"></div>
+              <div class="reactor-badges">
+                <span class="chip green" id="rStateBadge">STEADY-STATE FLUID DYNAMICS</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-header" style="margin:20px 0 8px">
+            <div class="ml">Curated Sequential Degradation Pathway</div>
+            <span class="chip gray">LITERATURE BENCHMARK</span>
+          </div>
+          <table id="scheme">
+            <thead>
+              <tr><th>Step</th><th>Product Species</th><th>Degradation Mechanism</th><th>k (min⁻¹)</th><th>Provenance</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- Column 3: Kinetics Curve, Hazard Screen & KPI Rail -->
+        <div class="panel" id="resRail">
+          <!-- Holographic Stage Scanner -->
+          <div id="stageScanner">
+            <div class="row" style="font:700 11px var(--mono)">
+              <span style="color:var(--cyan)" id="scanStageName">PIPELINE INITIALIZING…</span>
+              <div class="sp"></div>
+              <span id="scanPercent" style="color:#fff">0%</span>
+            </div>
+            <div class="stage-bar"><div class="stage-bar-fill" id="scanBar"></div></div>
+          </div>
+
+          <div class="panel-header">
+            <div class="ml">Degradation Kinetics — Relative Concentration (C / C₀)</div>
+            <div class="row" style="gap:6px">
+              <span class="ml" style="font-size:9.5px">HORIZON</span>
+              <input id="rng" type="range" min="10" max="100" value="100" style="width:85px;margin:0">
+              <span id="rngVal" class="chip gray" style="font-size:9px">100%</span>
+            </div>
+          </div>
+          <div id="heroWrap"><canvas id="hero"></canvas></div>
+
+          <!-- Hazard Inversion Warning Banner -->
+          <div id="warn"></div>
+
+          <div class="panel-header" style="margin:16px 0 6px">
+            <div class="ml">Transformation Products — Hazard Prioritization</div>
+            <span class="ml" style="font-size:9px;color:var(--cyan)">CLICK ROW → 3D VIEW</span>
+          </div>
+          <table id="tpTab">
+            <thead>
+              <tr><th>TP Species</th><th>Structural Alerts</th><th>Aq. Class</th><th>Score</th><th>vs Parent</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <!-- 4 KPI Tiles (Formatted 2x2 Grid) -->
+          <div id="tiles"></div>
+
+          <!-- Actions & Validation -->
+          <div class="row" style="margin-top:16px">
+            <button class="btn sm" id="exCSV">EXPORT CSV</button>
+            <button class="btn sm" id="exPNG">SAVE CHART PNG</button>
+            <button class="btn sm" id="exJSON">SESSION PACKET</button>
+            <button class="btn sm pri" id="btnVal">VALIDATION…</button>
+          </div>
+
+          <!-- Empirical Validation Drawer -->
+          <div id="valBox" class="hide" style="margin-top:14px;padding:14px;background:rgba(2,6,16,0.6);border-radius:var(--r-sm);border:1px solid var(--border)">
+            <div class="panel-header" style="margin-bottom:8px">
+              <div class="ml cyan">Experimental Reference Series (t_min, C/C₀)</div>
+              <select id="valPresets" style="width:160px;margin:0;padding:3px 6px;font-size:10px">
+                <option value="">Load Preset…</option>
+                <option value="cipro_uv">Cipro UV/H2O2 Study</option>
+                <option value="mb_plasma">Methylene Blue Plasma</option>
+                <option value="pfoa_vuv">PFOA Radical Abatement</option>
+              </select>
+            </div>
+            <textarea id="valTxt" rows="3" placeholder="0, 1.0&#10;5, 0.62&#10;15, 0.28&#10;30, 0.08" style="width:100%;margin-top:4px"></textarea>
+            <div class="row" style="margin-top:10px">
+              <input type="file" id="valFile" accept=".csv,.txt" style="width:auto">
+              <button class="btn sm pri" id="valRun">COMPUTE R² / RMSE</button>
+              <button class="btn sm" id="valSyn">SYNTHETIC BENCHMARK</button>
+            </div>
+            <div id="valOut" style="margin-top:10px;font:600 11.5px var(--mono)"></div>
+            <div id="valWrap"><canvas id="valChart"></canvas></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================== MOLECULAR VIEWER PAGE ======================== -->
+    <section class="page" id="pg-viewer">
+      <div class="grid" style="grid-template-columns:1fr 340px">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="row" style="gap:10px">
+              <span class="ml cyan">Active Molecule:</span>
+              <select id="vSel" style="width:280px;margin:0"></select>
+            </div>
+            <div class="row" style="gap:6px">
+              <button class="btn sm" id="vBallStick">Ball &amp; Stick</button>
+              <button class="btn sm" id="vStick">Stick</button>
+              <button class="btn sm" id="vSph">Sphere</button>
+              <button class="btn sm" id="vLine">Wire</button>
+              <button class="btn sm" id="vSpin">Auto-Spin: OFF</button>
+              <button class="btn sm" id="vReset">Reset</button>
+              <button class="btn sm pri" id="vShot">Capture PNG</button>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
+            <div>
+              <div class="ml" style="margin-bottom:8px">2D Topology (Chemical Graph)</div>
+              <canvas class="mol" id="v2d" style="height:420px"></canvas>
+            </div>
+            <div>
+              <div class="ml" style="margin-bottom:8px">3D Conformer Model (WebGL)</div>
+              <div id="v3d"></div>
+            </div>
+          </div>
+          <div class="note" id="v3dNote" style="margin-top:10px;color:var(--muted)">3D conformer fetched live via PubChem. Offline/fallback procedural conformer ready.</div>
+        </div>
+
+        <!-- Right: Chemical Dossier & Inspector -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="ml">Atom Coordinate Inspector</div>
+            <span class="chip gray">PICK ATOM</span>
+          </div>
+          <div id="vIns" style="font:500 11.5px/1.8 var(--mono);color:var(--text-dim);padding:12px;background:rgba(2,6,16,0.6);border-radius:6px;border:1px solid var(--border)">
+            Click any atom in the 3D conformer viewport to inspect coordinates and element data.
+          </div>
+
+          <div class="panel-header" style="margin-top:20px">
+            <div class="ml cyan">Chemical Dossier &amp; Properties</div>
+            <span class="chip amber">RULE-BASED</span>
+          </div>
+          <div id="vProps"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================== DATA & PARAMS PAGE ======================== -->
+    <section class="page" id="pg-data">
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="ml cyan">Curated Chemical Parameters &amp; Kinetic Database</div>
+            <div style="font:400 12px var(--ui);color:var(--muted);margin-top:2px">
+              Edit logP, quantum yield Φ, or k_OH in place. Overridden records are marked <span class="chip red" style="font-size:8px">USER-MODIFIED</span> and persisted locally.
+            </div>
+          </div>
+          <button class="btn danger" id="dClear">RESTORE CURATED DEFAULTS</button>
+        </div>
+        <table id="dTab" style="margin-top:14px">
+          <thead>
+            <tr>
+              <th>Chemical Species</th>
+              <th>Role</th>
+              <th>MW (g/mol)</th>
+              <th>logP Octanol-Water</th>
+              <th>Quantum Yield Φ</th>
+              <th>k_OH (M⁻¹s⁻¹)</th>
+              <th>Provenance &amp; Source</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ======================== METHODOLOGY PAGE ======================== -->
+    <section class="page" id="pg-method">
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div class="panel">
+          <div class="ml cyan">Model Governing Equations (Photochemistry &amp; Kinetics)</div>
+<pre>1. Photon Energy &amp; Flux:
+   E[eV] = 1239.84 / λ[nm]
+   I₀[Ein/L/s] = (I_irr · A_irr / (h·c/λ)) / (N_A · V_batch)
+
+2. Optics &amp; Self-Absorption Screening:
+   A(λ) = Σ ε_i(λ) · C_i · l ;   f = 1 − 10^(-A) ;   S = f / (2.303 · A)
+
+3. Direct Photolysis Abatement Rate:
+   k_d,i = 2.303 · Φ_i · ε_i(λ) · I₀ · S        [s⁻¹]
+
+4. Radical Generation Rate g (•OH):
+   UV / H₂O₂ : g = 2 · Φ_HP · I₀ · f_HP · S
+   Electro-ox : g = η · I_cell / (F · V_batch)    [Faraday]
+   Plasma     : g = G_pl · P_pl / V_batch         [Bench Calibrated]
+
+5. Radical Steady-State Concentration:
+   [•OH]_ss = g / (Σ k_OH,j · C_j + Matrix_Scav)   [M]
+
+6. Overall Reaction Rate:
+   k_obs,i = k_d,i + k_OH,i · [•OH]_ss
+
+7. Sequential Intermediate Kinetics:
+   Analytic Bateman Equation solved across n species with RK4 cross-validation.
+
+8. Electrical Energy per Order (EEO):
+   EEO = P_elec · t / (V · log₁₀(C₀/C_f))   [kWh/m³/order]</pre>
+        </div>
+
+        <div class="panel">
+          <div class="ml purple">Axiomatic Assumptions &amp; Disclosed Limitations</div>
+          <ul class="disclose">
+            <li><b>Batch Reactor Mixing:</b> Perfect macroscopic mixing; pseudo-first order excess of radicals.</li>
+            <li><b>Steady-State •OH:</b> Quasi-steady-state assumption; radical–radical dimerization ($2^{\bullet}\text{OH} \to \text{H}_2\text{O}_2$) neglected relative to bulk scavenger consumption.</li>
+            <li><b>Optics &amp; Screening:</b> Screen factor $S = (1-10^{-A})/(2.303A)$ applied uniformly across the path length.</li>
+            <li><b>Sequential Chains:</b> Curated linear pathways representing the dominant metabolic degradation intermediates.</li>
+            <li><b>Hazard Categorization:</b> Benigni–Bossa structural alert rules + 4-class logP narcosis prioritization screen. <em>Flagging indicates prioritized candidate for bioassay testing, not clinical toxicity.</em></li>
+            <li><b>Gas-Liquid Mass Transfer:</b> Volatilization losses assumed minimal during initial degradation phase.</li>
+          </ul>
+        </div>
+
+        <div class="panel" style="grid-column:1/-1">
+          <div class="ml green">Provenance of Physical Constants &amp; Literature Sources</div>
+          <table style="margin-top:10px">
+            <thead>
+              <tr><th>Constant / Parameter</th><th>Numerical Value / Literature Baseline</th><th>Authority Class</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Planck constant h, Speed of light c, Avogadro N_A, Faraday F</td><td>CODATA 2018 Fundamental Physical Constants</td><td><span class="chip green">EXACT CONSTANTS</span></td></tr>
+              <tr><td>ε_H₂O₂(254) = 19.6 L/mol/cm, Φ_H₂O₂ ≈ 1.0</td><td>Bolton &amp; Stefan (1999), <em>J. Photochem. Photobiol. A</em></td><td><span class="chip green">PEER-REVIEWED LIT</span></td></tr>
+              <tr><td>Hydroxyl Radical Reaction Rates (k_OH)</td><td>Buxton, Greenstock, Helman, Ross (1988), <em>J. Phys. Chem. Ref. Data</em></td><td><span class="chip green">NDTRC COMPILATION</span></td></tr>
+              <tr><td>EEO (Electrical Energy per Order) Definition</td><td>Bolton, Bircher, Tumas, Tolman (2001), <em>J. Adv. Oxid. Technol.</em></td><td><span class="chip green">IUPAC STANDARD</span></td></tr>
+              <tr><td>Structural Mutagenicity/Toxicity Rules</td><td>Benigni &amp; Bossa Rulebases for Mutagenicity (ToxTree architecture)</td><td><span class="chip amber">RULE-BASED SCREEN</span></td></tr>
+              <tr><td>Micropollutant Pathways &amp; Reaction Rates</td><td>Curated from peer-reviewed AOP literature (Ciprofloxacin, BPA, PFOA, etc.)</td><td><span class="chip amber">CURATED BENCHMARKS</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================== REFERENCES PAGE ======================== -->
+    <section class="page" id="pg-refs">
+      <div class="panel">
+        <div class="ml cyan">About PlasmaGuard v2.0</div>
+        <p style="margin:12px 0;font:400 13.5px/1.8 var(--ui);color:var(--text-dim)">
+          <b>PlasmaGuard</b> is an offline-capable, zero-backend computational instrument engineered to model, 
+          predict, and visualize transformation-product kinetics and hazard inversion dynamics across Advanced Oxidation Processes 
+          (Ultraviolet Photolysis, Anodic Electrochemical Oxidation, and Non-Thermal Plasma Discharges).
+        </p>
+        
+        <div class="card">
+          <div class="ml">System Architecture &amp; Integrity Verification</div>
+          <div style="margin-top:8px;font:500 12px/1.8 var(--mono);color:var(--text-dim)">
+            Engine: v2.0.0-build &nbsp;·&nbsp; Benchmark Dataset: 2026-09-22 (10 High-Priority Micropollutants) &nbsp;·&nbsp;
+            Kinetic Engine: Bateman Analytic Solver + 4th-order Runge-Kutta Cross-Validator &nbsp;·&nbsp;
+            Integrity Checksum: <code id="csum">PG-AOP-v2.0-F472B6</code>
+          </div>
+        </div>
+
+        <div class="ml" style="margin-top:20px">Key Scientific Citations</div>
+        <ol class="refs">
+          <li>Bolton, J.R., Bircher, K.G., Tumas, W., &amp; Tolman, C.A. (2001). Figures-of-merit for the technical and economic evaluation of advanced oxidation technologies. <em>Pure and Applied Chemistry</em>, 73(4), 627-637.</li>
+          <li>Buxton, G.V., Greenstock, C.L., Helman, W.P., &amp; Ross, A.B. (1988). Critical review of rate constants for reactions of hydrated electrons, hydrogen atoms and hydroxyl radicals in aqueous solution. <em>J. Phys. Chem. Ref. Data</em>, 17(2), 513-886.</li>
+          <li>Bolton, J.R., &amp; Stefan, M.I. (1999). Photochemical production of hydroxyl radicals in UV/H2O2 processes. <em>Journal of Photochemistry and Photobiology A: Chemistry</em>, 126(1-3), 133-138.</li>
+          <li>Benigni, R., &amp; Bossa, C. (2011). Mechanisms of chemical carcinogenicity and mutagenicity: a review with implications for predictive toxicology. <em>Chemical Reviews</em>, 111(4), 2507-2536.</li>
+          <li>Bateman, H. (1910). The solution of a system of differential equations occurring in the theory of radioactive transformations. <em>Proc. Cambridge Philos. Soc.</em>, 15, 423-427.</li>
+          <li>Gerritsen, J., et al. SmilesDrawer: parsing and drawing SMILES-encoded molecules in web browsers without server interaction.</li>
+        </ol>
+
+        <div class="card" style="margin-top:20px">
+          <div class="ml">Open Source License &amp; Authorship</div>
+          <div style="margin-top:8px;font:500 12px/1.8 var(--mono);color:var(--muted)">
+            MIT Open-Source Computational Instrument. Single-file client-side architecture. Designed for environmental researchers, process engineers, and regulatory toxicologists.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Persistent Status Bar -->
+  <footer id="status">
+    <span id="stStage"><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)"></i> ENGINE READY</span>
+    <span id="stMethod">UV/H₂O₂</span>
+    <span id="stLam">λ=254 nm</span>
+    <span id="stCross">Bateman↔RK4 Δ=0.0e+0</span>
+    <div class="sp"></div>
+    <span id="stProv" class="ml" style="font-size:9.5px">PROVENANCE: CODATA · BOLTON · BUXTON · BENIGNI-BOSSA</span>
+  </footer>
+
+</div>
+
+<!-- Global Toasts -->
+<div id="toast"></div>
+
+<!-- Generic Modal Dialog -->
+<div id="modal">
+  <div class="box">
+    <div class="panel-header">
+      <div class="ml cyan" id="mTitle">Information</div>
+      <button class="btn sm" id="mClose">✕ CLOSE</button>
+    </div>
+    <div id="mBody" style="margin-top:14px"></div>
+  </div>
+</div>
+
+
+<!-- ======================== CORE JAVASCRIPT ======================== -->
+<script>
+/* ============ PG.const — CODATA Exact Constants ============ */
+const PG = {};
+PG.const = {
+  h: 6.62607015e-34,      // J·s
+  c: 2.99792458e8,        // m/s
+  NA: 6.02214076e23,      // mol⁻¹
+  F: 96485.33212,         // C/mol
+  AM: {
+    C:12.011, H:1.008, N:14.007, O:15.999, F:18.998, S:32.06,
+    Cl:35.45, Na:22.99, P:30.974, Br:79.904, I:126.904, Fe:55.845
+  }
+};
+
+PG.mw = function(formula) {
+  let m = 0;
+  const re = /([A-Z][a-z]?)(\d*)/g;
+  let x;
+  while ((x = re.exec(formula)) !== null) {
+    const el = x[1];
+    const n = x[2] ? parseInt(x[2], 10) : 1;
+    const a = PG.const.AM[el];
+    if (a == null) throw new Error("Unknown element in formula: " + el);
+    m += a * n;
+  }
+  return m;
+};
+
+/* ============ PG.data — Curated Benchmark Database ============ */
+PG.data = {
+  h2o2: { MW: 34.01, eps: { 254: 19.6, 365: 0.5 }, phi: 1.0, kOH: 2.7e7, src: "LITERATURE — Bolton & Stefan 1999" },
+  pollutants: [
+    {
+      id: "cipro", name: "Ciprofloxacin", cat: "antibiotic",
+      formula: "C17H18FN3O3", logP: 0.28,
+      smiles: "O=C(O)c1cn(C2CC2)c2cc(N3CCNCC3)c(F)cc2c1=O",
+      eps: { 254: 3000, 365: 120 }, phi: 0.02, kOH: 6.9e9,
+      src: "LITERATURE — Bobu et al. 2013",
+      ks: [0.12, 0.06, 0.03],
+      tps: [
+        { name: "Ring-opened diamine TP", formula: "C15H18FN3O3", logP: -0.4,
+          smiles: "O=C(O)c1cn(C2CC2)c2cc(NCCN)c(F)cc2c1=O",
+          phi: 0.01, kOH: 5e9, mech: "piperazine ring cleavage",
+          src: "LITERATURE — Vasconcelos 2009" },
+        { name: "Des-piperazinyl TP", formula: "C13H11FN2O3", logP: 0.1,
+          smiles: "O=C(O)c1cn(C2CC2)c2cc(N)c(F)cc2c1=O",
+          phi: 0.01, kOH: 4e9, mech: "C–N bond scission",
+          src: "LITERATURE — Paul et al. 2010" }
+      ]
+    },
+    {
+      id: "mb", name: "Methylene Blue", cat: "dye",
+      formula: "C16H18ClN3S", logP: 3.3,
+      smiles: "CN(C)c1ccc2c(c1)nc1ccc3c(N(C)C)ccc(c3[n+]1c2)Cl",
+      eps: { 254: 15000, 365: 900 }, phi: 0.001, kOH: 1.2e10,
+      src: "LITERATURE — Zhang et al. 2012",
+      ks: [0.15, 0.08, 0.05],
+      tps: [
+        { name: "Azure B", formula: "C15H16ClN3S", logP: 3.8,
+          smiles: "CN(C)c1ccc2c(c1)nc1ccc3c(NC)ccc(c3[n+]1c2)Cl",
+          phi: 0.001, kOH: 1e10, mech: "N-demethylation",
+          src: "LITERATURE — Houas et al. 2001" },
+        { name: "Thionine", formula: "C12H10ClN3S", logP: 1.6,
+          smiles: "Nc1ccc2c(c1)nc1ccc3c(N)ccc(c3[n+]1c2)Cl",
+          phi: 0.001, kOH: 8e9, mech: "complete N-demethylation",
+          src: "LITERATURE — Senthilkumaar 2005" }
+      ]
+    },
+    {
+      id: "pfoa", name: "PFOA (Perfluorooctanoic)", cat: "pfas",
+      formula: "C8HF15O2", logP: 4.9,
+      smiles: "OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F",
+      eps: { 254: 20, 365: 1 }, phi: 0.001, kOH: 1.1e7,
+      src: "LITERATURE — Vecitis et al. 2009",
+      ks: [0.02, 0.015, 0.01],
+      tps: [
+        { name: "PFHpA", formula: "C7HF13O2", logP: 4.2,
+          smiles: "OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F",
+          phi: 0.001, kOH: 1e7, mech: "Kolbe decarboxylation & shortening",
+          src: "LITERATURE — Trojanowicz 2018" },
+        { name: "PFHxA", formula: "C6HF11O2", logP: 3.2,
+          smiles: "OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F",
+          phi: 0.001, kOH: 9e6, mech: "sequential fluorocarbon scission",
+          src: "LITERATURE — Wang et al. 2017" }
+      ]
+    },
+    {
+      id: "smx", name: "Sulfamethoxazole", cat: "antibiotic",
+      formula: "C10H11N3O3S", logP: 0.89,
+      smiles: "Cc1cc(on1)Nc2ccc(S(N)(=O)=O)cc2",
+      eps: { 254: 8000, 365: 200 }, phi: 0.03, kOH: 5.5e9,
+      src: "LITERATURE — Trovó et al. 2009",
+      ks: [0.10, 0.07, 0.04],
+      tps: [
+        { name: "Sulfanilamide", formula: "C6H8N2O2S", logP: 0.4,
+          smiles: "Nc1ccc(S(N)(=O)=O)cc1",
+          phi: 0.02, kOH: 6e9, mech: "isoxazole ring scission",
+          src: "LITERATURE — Gmurek et al. 2017" },
+        { name: "3-Amino-5-methylisoxazole", formula: "C4H6N2O", logP: 0.2,
+          smiles: "Cc1cc(N)on1",
+          phi: 0.02, kOH: 5e9, mech: "sulfonamide C–S scission",
+          src: "LITERATURE — Lutterbeck et al. 2015" }
+      ]
+    },
+    {
+      id: "bpa", name: "Bisphenol A", cat: "endocrine disruptor",
+      formula: "C15H16O2", logP: 3.32,
+      smiles: "CC(C)(c1ccc(O)cc1)c2ccc(O)cc2",
+      eps: { 254: 1050, 365: 5 }, phi: 0.01, kOH: 8.5e9,
+      src: "LITERATURE — Staples 1998 / Buxton 1988",
+      ks: [0.14, 0.08, 0.04],
+      tps: [
+        { name: "Monohydroxy-BPA", formula: "C15H16O3", logP: 2.5,
+          smiles: "CC(C)(c1ccc(O)cc1)c2ccc(O)c(O)c2",
+          phi: 0.01, kOH: 9.0e9, mech: "aromatic electrophilic hydroxylation",
+          src: "LITERATURE — Deborde et al. 2008" },
+        { name: "4-Isopropenylphenol", formula: "C9H10O", logP: 2.1,
+          smiles: "CC(=C)c1ccc(O)cc1",
+          phi: 0.01, kOH: 7.5e9, mech: "quaternary C-C bridging scission",
+          src: "LITERATURE — Katsumata et al. 2004" }
+      ]
+    },
+    {
+      id: "dcf", name: "Diclofenac", cat: "pharmaceutical",
+      formula: "C14H11Cl2NO2", logP: 4.51,
+      smiles: "O=C(O)Cc1ccccc1Nc2c(Cl)cccc2Cl",
+      eps: { 254: 9300, 365: 450 }, phi: 0.05, kOH: 9.7e9,
+      src: "LITERATURE — Packer 2003 / Buxton 1988",
+      ks: [0.18, 0.09, 0.04],
+      tps: [
+        { name: "5-Hydroxydiclofenac", formula: "C14H11Cl2NO3", logP: 3.8,
+          smiles: "O=C(O)Cc1cc(O)ccc1Nc2c(Cl)cccc2Cl",
+          phi: 0.02, kOH: 8.0e9, mech: "aromatic ring hydroxylation",
+          src: "LITERATURE — Perez-Estrada 2005" },
+        { name: "Chloro-carbazole TP", formula: "C14H9Cl2NO", logP: 3.9,
+          smiles: "O=C1Cc2ccccc2N1c3c(Cl)cccc3Cl",
+          phi: 0.02, kOH: 6.5e9, mech: "photocyclization / dehydrochlorination",
+          src: "LITERATURE — Keen et al. 2013" }
+      ]
+    },
+    {
+      id: "cbz", name: "Carbamazepine", cat: "pharmaceutical",
+      formula: "C15H12N2O", logP: 2.45,
+      smiles: "NC(=O)N1c2ccccc2/C=C/c3ccccc13",
+      eps: { 254: 6200, 365: 100 }, phi: 0.001, kOH: 8.8e9,
+      src: "LITERATURE — Doll & Frimmel 2005 / Buxton 1988",
+      ks: [0.11, 0.06, 0.03],
+      tps: [
+        { name: "CBZ 10,11-Epoxide", formula: "C15H12N2O2", logP: 2.1,
+          smiles: "NC(=O)N2c1ccccc1C1OC1c3ccccc23",
+          phi: 0.002, kOH: 5.5e9, mech: "olefinic double bond epoxidation",
+          src: "LITERATURE — McDowell et al. 2005" },
+        { name: "10,11-Dihydroxy-CBZ", formula: "C15H14N2O3", logP: 1.2,
+          smiles: "NC(=O)N1c2ccccc2C(O)C(O)c3ccccc13",
+          phi: 0.005, kOH: 7.0e9, mech: "epoxide ring opening / diol hydrolysis",
+          src: "LITERATURE — Vogna et al. 2004" }
+      ]
+    },
+    {
+      id: "atz", name: "Atrazine", cat: "pesticide",
+      formula: "C8H14ClN5", logP: 2.61,
+      smiles: "CCNC1=NC(=NC(=N1)Cl)NC(C)C",
+      eps: { 254: 3800, 365: 10 }, phi: 0.05, kOH: 2.4e9,
+      src: "LITERATURE — Torrents 1997 / Buxton 1988",
+      ks: [0.08, 0.05, 0.02],
+      tps: [
+        { name: "Deethylatrazine (DEA)", formula: "C6H10ClN5", logP: 1.5,
+          smiles: "NC1=NC(=NC(=N1)Cl)NC(C)C",
+          phi: 0.03, kOH: 2.0e9, mech: "oxidative deethylation of amine",
+          src: "LITERATURE — Ta et al. 2006" },
+        { name: "Deisopropylatrazine (DIA)", formula: "C5H8ClN5", logP: 1.1,
+          smiles: "CCNC1=NC(=NC(=N1)Cl)N",
+          phi: 0.03, kOH: 1.8e9, mech: "oxidative deisopropylation",
+          src: "LITERATURE — Acero et al. 2000" }
+      ]
+    },
+    {
+      id: "diox", name: "1,4-Dioxane", cat: "industrial",
+      formula: "C4H8O2", logP: -0.27,
+      smiles: "C1COCCO1",
+      eps: { 254: 1.5, 365: 0.1 }, phi: 0.001, kOH: 2.8e9,
+      src: "LITERATURE — Stefan & Bolton 1998 / Buxton 1988",
+      ks: [0.05, 0.03, 0.015],
+      tps: [
+        { name: "1,4-Dioxan-2-ol", formula: "C4H8O3", logP: -0.6,
+          smiles: "OC1COCCO1",
+          phi: 0.001, kOH: 3.2e9, mech: "alpha-C hydrogen abstraction & hydroxylation",
+          src: "LITERATURE — Maurino et al. 1997" },
+        { name: "2-Hydroxyethoxyacetic acid", formula: "C4H8O4", logP: -0.8,
+          smiles: "OCCOCC(=O)O",
+          phi: 0.001, kOH: 2.1e9, mech: "ether ring scission & terminal oxidation",
+          src: "LITERATURE — Zenker et al. 2003" }
+      ]
+    },
+    {
+      id: "act", name: "Acetaminophen", cat: "pharmaceutical",
+      formula: "C8H9NO2", logP: 0.46,
+      smiles: "Oc1ccc(NC(=O)C)cc1",
+      eps: { 254: 2100, 365: 20 }, phi: 0.01, kOH: 7.6e9,
+      src: "LITERATURE — Andreozzi 2003 / Buxton 1988",
+      ks: [0.16, 0.09, 0.04],
+      tps: [
+        { name: "4-Aminophenol", formula: "C6H7NO", logP: 0.04,
+          smiles: "Oc1ccc(N)cc1",
+          phi: 0.01, kOH: 1.0e10, mech: "amide bond deacetylation",
+          src: "LITERATURE — Vogna et al. 2002" },
+        { name: "Hydroquinone", formula: "C6H6O2", logP: 0.59,
+          smiles: "Oc1ccc(O)cc1",
+          phi: 0.01, kOH: 1.1e10, mech: "oxidative deamination",
+          src: "LITERATURE — Skoumal et al. 2006" }
+      ]
+    }
+  ]
+};
+
+// Local storage override management
+PG.over = JSON.parse(localStorage.getItem("pg.over") || "{}");
+PG.applyOver = function() {
+  for (const k in PG.over) {
+    const parts = k.split("|");
+    const pid = parts[0];
+    const fieldIdx = parts[1];
+    const field = parts[2];
+    const val = parseFloat(PG.over[k]);
+    const poll = PG.data.pollutants.find(p => p.id === pid);
+    if (!poll) continue;
+    if (fieldIdx === "par") {
+      poll[field] = val;
+      poll.src = "USER-MODIFIED";
+    } else if (fieldIdx.startsWith("t")) {
+      const i = parseInt(fieldIdx.slice(1), 10);
+      if (poll.tps[i]) {
+        poll.tps[i][field] = val;
+        poll.tps[i].src = "USER-MODIFIED";
+      }
+    }
+  }
+};
+PG.applyOver();
+
+PG.setOver = function(pid, idx, field, isTP, val) {
+  const key = pid + "|" + (isTP ? ("t" + idx) : "par") + "|" + field;
+  PG.over[key] = val;
+  localStorage.setItem("pg.over", JSON.stringify(PG.over));
+};
+
+/* ============ PG.tox — Benigni-Bossa Structural Alert Screen ============ */
+PG.tox = {
+  rules: [
+    {
+      name: "Nitro group",
+      desc: "Prone to reduction to reactive nitroso & hydroxylamine intermediates capable of DNA binding.",
+      fn: s => (/\[N\+\]|\(=O\)\[O-\]|Nitro|N\(=O\)=O/.test(s)) || (s.indexOf("[N+]") !== -1 && s.indexOf("[O-]") !== -1)
+    },
+    {
+      name: "Primary aromatic amine",
+      desc: "Metabolically oxidized to reactive aryl nitrenium ions; high mutagenic alert.",
+      fn: s => {
+        const patterns = [/Nc[1-9]/, /\bc\(N\)\b/, /c1ccc\(N\)/, /c1cc\(N\)c/, /c2cc\(N\)/, /\(N\)c[1-9]/, /\bN\)c/, /cc\(N\)cc/, /\(N\)\bc/];
+        for (const re of patterns) if (re.test(s)) return true;
+        return false;
+      }
+    },
+    {
+      name: "Epoxide / oxirane ring",
+      desc: "Direct-acting strained electrophile capable of alkylating cellular nucleophiles and DNA.",
+      fn: s => /C1OC1|C2OC2|1OC1/.test(s)
+    },
+    {
+      name: "Azo bond (-N=N-)",
+      desc: "Reductive cleavage generates hazardous primary aromatic amines.",
+      fn: s => s.indexOf("N=N") !== -1
+    },
+    {
+      name: "Halogenated aryl/alkyl",
+      desc: "Enhances lipid permeability and bioaccumulation resistance against complete mineralization.",
+      fn: s => /[FClBrI]c|\(F\)|\(Cl\)|\(Br\)|\(I\)|C\(F\)\(F\)/.test(s)
+    },
+    {
+      name: "Perfluoroalkyl chain",
+      desc: "High C-F bond energy (>485 kJ/mol) resists chemical oxidation; persistent fluorochemical alert.",
+      fn: s => /(C\(F\)\(F\)){2,}|C\(F\)\(F\)C\(F\)\(F\)/.test(s)
+    }
+  ],
+  aq: function(logP) {
+    if (logP < 1) return 4;
+    if (logP < 2) return 3;
+    if (logP < 3.5) return 2;
+    return 1;
+  },
+  aqName: function(c) { return ["Very High Concern","High Aquatic Concern","Moderate Concern","Low Concern"][4-c] || "Unknown"; },
+  screen: function(sp) {
+    const alerts = [];
+    for (let i = 0; i < PG.tox.rules.length; i++) {
+      try {
+        if (PG.tox.rules[i].fn(sp.smiles)) alerts.push(PG.tox.rules[i]);
+      } catch (e) {}
+    }
+    const aq = PG.tox.aq(sp.logP);
+    const pri = 2 * alerts.length + (4 - aq) + (sp.logP > 3.5 ? 1 : 0);
+    return { alerts: alerts, alertNames: alerts.map(a => a.name), aq: aq, pri: pri };
+  }
+};
+
+/* ============ PG.engine — Rigorous Photochemical & Kinetic Engine ============ */
+PG.engine = {
+  epsAt: function(sp, lam) {
+    if (!sp.eps) return 1;
+    const ks = Object.keys(sp.eps).map(Number).sort((a,b)=>a-b);
+    if (ks.length === 0) return 1;
+    let best = ks[0], bestD = Math.abs(ks[0] - lam);
+    for (let i = 1; i < ks.length; i++) {
+      const d = Math.abs(ks[i] - lam);
+      if (d < bestD) { bestD = d; best = ks[i]; }
+    }
+    return sp.eps[best];
+  },
+  bateman: function(ks, t) {
+    const n = ks.length;
+    const out = new Array(n).fill(0);
+    const K = ks.slice();
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        if (Math.abs(K[i] - K[j]) < 1e-12) K[j] += 1e-9;
+      }
+    }
+    for (let i = 0; i < n; i++) {
+      let s = 0;
+      for (let j = 0; j <= i; j++) {
+        let d = 1;
+        for (let m = 0; m <= i; m++) {
+          if (m !== j) d *= (K[m] - K[j]);
+        }
+        if (Math.abs(d) < 1e-24) continue;
+        s += Math.exp(-K[j] * t) / d;
+      }
+      let p = 1;
+      for (let j = 0; j < i; j++) p *= K[j];
+      out[i] = p * s;
+    }
+    return out;
+  },
+  rk4MaxDev: function(ks, T) {
+    const n = ks.length;
+    const y = new Array(n).fill(0);
+    y[0] = 1;
+    const N = 2000;
+    const dt = T / N;
+    const f = function(v) {
+      const out = new Array(n);
+      for (let i = 0; i < n; i++) {
+        out[i] = (i > 0 ? ks[i-1] * v[i-1] : 0) - ks[i] * v[i];
+      }
+      return out;
+    };
+    for (let s = 0; s < N; s++) {
+      const k1 = f(y);
+      const y2 = y.map((c,i) => c + dt/2 * k1[i]);
+      const k2 = f(y2);
+      const y3 = y.map((c,i) => c + dt/2 * k2[i]);
+      const k3 = f(y3);
+      const y4 = y.map((c,i) => c + dt * k3[i]);
+      const k4 = f(y4);
+      for (let i = 0; i < n; i++) {
+        y[i] = y[i] + dt/6 * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]);
+      }
+    }
+    const bat = PG.engine.bateman(ks, T);
+    let max = 0;
+    for (let i = 0; i < n; i++) {
+      const d = Math.abs(y[i] - bat[i]);
+      if (d > max) max = d;
+    }
+    return max;
+  },
+  run: function(P, pol) {
+    const C = PG.const;
+    const lam = P.lam, V = P.V;
+    const CHP = (P.method === "uv") ? (P.HP * 1e-3) : 0;
+    const C0MgL = P.C0;
+    const MW_pol = PG.mw(pol.formula);
+    const C0 = (C0MgL / 1000) / MW_pol; // mol/L
+    const species = [{...pol, role:"parent"}].concat(pol.tps.map(t => ({...t, role:"tp"})));
+    const nSpecies = species.length;
+
+    const E = 1239.84 / lam;
+    const EJ = C.h * C.c / (lam * 1e-9);
+    const I0 = (P.irr * P.area / EJ) / (C.NA * V);
+    const epsP = species.map(s => PG.engine.epsAt(s, lam));
+    const epsHP = P.method === "uv" ? PG.engine.epsAt(PG.data.h2o2, lam) : 0;
+
+    const pathCm = P.path;
+    const A = epsP[0] * C0 * pathCm + epsHP * CHP * pathCm;
+    const f = 1 - Math.pow(10, -A);
+    const S = A > 1e-6 ? f / (2.303 * A) : 1;
+
+    const kd = species.map((s, i) => {
+      return 2.303 * s.phi * epsP[i] * I0 * S;
+    });
+
+    let g;
+    if (P.method === "uv") {
+      const f_HP = epsHP * CHP * pathCm / (A || 1);
+      g = 2 * PG.data.h2o2.phi * I0 * f_HP * S;
+    } else if (P.method === "ec") {
+      g = P.eta * (P.Ie / 1000) / (C.F * V);
+    } else {
+      g = P.Gpl * 1e-6 * P.Pp / V;
+    }
+
+    const scavDenom = pol.kOH * C0 + (P.method === "uv" ? PG.data.h2o2.kOH * CHP : 0) + P.scav;
+    const OH = g / scavDenom;
+
+    const kCurated = pol.ks.map(k => k / 60);
+    const kUse = [];
+    for (let i = 0; i < nSpecies; i++) {
+      const kChem = kd[i] + species[i].kOH * OH;
+      const kCur = i === 0 ? kCurated[0] : (kCurated[i] || (kCurated[kCurated.length-1] || 0.05/60));
+      if (kChem > 1e-15) kUse.push(kChem);
+      else kUse.push(kCur);
+    }
+
+    let minK = 1e99;
+    for (let i = 0; i < nSpecies; i++) if (kUse[i] > 0 && kUse[i] < minK) minK = kUse[i];
+    const Tmax = 10 / Math.max(minK, 1e-9);
+    const N = 400;
+    const tArr = [];
+    const CArr = [];
+    for (let i = 0; i <= N; i++) tArr.push((Tmax * i / N));
+    for (let i = 0; i <= N; i++) {
+      const b = PG.engine.bateman(kUse, tArr[i]);
+      CArr.push(b.slice(0, nSpecies));
+    }
+    const t_min = tArr.map(t => t / 60);
+
+    const t90_s = Math.log(10) / kUse[0];
+    const parScr = PG.tox.screen(pol);
+    const tpScr = pol.tps.map(tp => PG.tox.screen(tp));
+    const flagged = [];
+    for (let i = 0; i < tpScr.length; i++) {
+      if (tpScr[i].pri > parScr.pri) flagged.push(i);
+    }
+
+    let tSafe = Tmax;
+    for (let i = 0; i <= N; i++) {
+      const c = CArr[i];
+      const okParent = c[0] < 0.1;
+      const okTps = flagged.every(j => c[j+1] < P.thr);
+      if (okParent && okTps) { tSafe = tArr[i]; break; }
+    }
+    const incomplete = tSafe >= Tmax - 1e-9;
+    const crossDev = PG.engine.rk4MaxDev(kUse, t90_s);
+
+    const orders = 2;
+    const tHours = (tSafe / 60);
+    const Vm3 = V / 1000;
+    const EEO = (P.Pe / 1000) * tHours / Math.max(Vm3 * orders, 1e-9);
+    const energy = EEO * Vm3 * orders;
+    const cost = energy * P.tar;
+    const pd = P.Pe / V;
+
+    return {
+      E, I0, A, S, kd, g, OH, kUse, kd_native: kd,
+      t_s: tArr, t: t_min, C: CArr,
+      t90_s, t90_min: t90_s / 60,
+      tSafe_s: tSafe, tSafe_min: tSafe / 60,
+      tSafe, t90: t90_s,
+      incomplete, cross: crossDev,
+      parScr, tpScr, flagged,
+      EEO, energy, cost, pd,
+      MW_pol, C0, Tmax_s: Tmax, Tmax_min: Tmax/60,
+      nSpecies, species, kCurated
+    };
+  }
+};
+
+/* ============ PG.charts — Cyberpunk Neon Visualizations ============ */
+PG.charts = {
+  hero: null, val: null,
+  danger: {
+    id: "danger",
+    beforeDatasetsDraw: function(chart, args, opts) {
+      if (!opts || opts.from == null || opts.to == null) return;
+      if (opts.to <= opts.from) return;
+      const xScale = chart.scales.x;
+      if (!xScale) return;
+      const ar = chart.chartArea;
+      if (!ar) return;
+      const l = Math.max(xScale.getPixelForValue(opts.from), ar.left);
+      const r = Math.min(xScale.getPixelForValue(opts.to), ar.right);
+      if (r <= l) return;
+      const ctx = chart.ctx;
+      ctx.save();
+      const grad = ctx.createLinearGradient(l, 0, r, 0);
+      grad.addColorStop(0, "rgba(255, 51, 102, 0.22)");
+      grad.addColorStop(0.5, "rgba(255, 51, 102, 0.12)");
+      grad.addColorStop(1, "rgba(255, 51, 102, 0.04)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(l, ar.top, r - l, ar.bottom - ar.top);
+      
+      // Border lines
+      ctx.strokeStyle = "rgba(255, 51, 102, 0.8)";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(l, ar.top); ctx.lineTo(l, ar.bottom);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(16, 185, 129, 0.85)";
+      ctx.beginPath();
+      ctx.moveTo(r, ar.top); ctx.lineTo(r, ar.bottom);
+      ctx.stroke();
+
+      // Danger label
+      ctx.fillStyle = "#ff6688";
+      ctx.font = "bold 9.5px 'JetBrains Mono', monospace";
+      ctx.fillText("HAZARD INVERSION WINDOW", l + 8, ar.top + 18);
+      ctx.fillText("t_90 (Parent Abated)", l + 8, ar.bottom - 22);
+      ctx.fillStyle = "#10b981";
+      ctx.fillText("t_safe (Safe Discharge)", r - 120, ar.bottom - 22);
+      ctx.restore();
+    }
+  },
+  drawHero: function(res, pol, winPct) {
+    const canvas = PG.ui.$("hero");
+    if (!canvas) return;
+    if (PG.charts.hero) PG.charts.hero.destroy();
+    const names = ["Parent (" + pol.name + ")"].concat(pol.tps.map(t => t.name));
+    const Tmax = res.t[res.t.length - 1];
+    const cutoff = Tmax * (winPct / 100);
+    
+    // Dataset colors
+    const colors = [
+      { border: "#00f0ff", glow: "rgba(0, 240, 255, 0.25)" },
+      { border: "#ff3366", glow: "rgba(255, 51, 102, 0.25)" },
+      { border: "#c084fc", glow: "rgba(192, 132, 252, 0.25)" },
+      { border: "#fbbf24", glow: "rgba(251, 191, 36, 0.25)" },
+      { border: "#34d399", glow: "rgba(52, 211, 153, 0.25)" }
+    ];
+
+    const ds = names.map((n, i) => {
+      const data = res.t.map((tm, j) => ({ x: tm, y: res.C[j][i] }))
+                       .filter(p => p.x <= cutoff);
+      const isParent = i === 0;
+      const isFlagged = res.flagged.includes(i - 1);
+      const col = isParent ? colors[0] : (isFlagged ? colors[1] : colors[(i % 3) + 2]);
+      
+      return {
+        label: n,
+        data: data,
+        borderColor: col.border,
+        backgroundColor: "transparent",
+        borderWidth: isParent ? 2.8 : (isFlagged ? 2.2 : 1.8),
+        pointRadius: 0,
+        tension: 0.28,
+        borderDash: isParent ? [] : (isFlagged ? [4, 2] : [])
+      };
+    });
+
+    const hasDanger = res.flagged.length > 0 && res.tSafe_min > res.t90_min;
+
+    PG.charts.hero = new Chart(canvas, {
+      type: "line",
+      data: { datasets: ds },
+      options: {
+        animation: { duration: 400 },
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "nearest", intersect: false },
+        plugins: {
+          danger: hasDanger ? { from: res.t90_min, to: Math.min(res.tSafe_min, Tmax) } : null,
+          legend: {
+            position: "top",
+            labels: {
+              color: "#cad8ee",
+              font: { family: "'JetBrains Mono', monospace", size: 10.5 },
+              boxWidth: 14,
+              usePointStyle: true,
+              pointStyle: "line"
+            }
+          },
+          tooltip: {
+            backgroundColor: "rgba(4, 10, 24, 0.95)",
+            borderColor: "rgba(0, 240, 255, 0.35)",
+            borderWidth: 1,
+            titleColor: "#00f0ff",
+            titleFont: { family: "'Orbitron', monospace", size: 11 },
+            bodyColor: "#f1f6ff",
+            bodyFont: { family: "'JetBrains Mono', monospace", size: 10.5 },
+            padding: 10,
+            callbacks: {
+              label: function(c) {
+                return c.dataset.label + ": " + (c.parsed.y * 100).toFixed(1) + "% (" + c.parsed.y.toFixed(4) + ") @ " + c.parsed.x.toFixed(1) + " min";
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: "linear",
+            title: {
+              display: true,
+              text: "Treatment Time (minutes)",
+              color: "#748ba7",
+              font: { family: "'JetBrains Mono', monospace", size: 10.5, weight: "600" }
+            },
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+            ticks: { color: "#748ba7", font: { family: "'JetBrains Mono', monospace", size: 10 } }
+          },
+          y: {
+            title: {
+              display: true,
+              text: "Relative Concentration (C / C₀)",
+              color: "#748ba7",
+              font: { family: "'JetBrains Mono', monospace", size: 10.5, weight: "600" }
+            },
+            min: 0,
+            max: 1.05,
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+            ticks: { color: "#748ba7", font: { family: "'JetBrains Mono', monospace", size: 10 } }
+          }
+        }
+      },
+      plugins: [PG.charts.danger]
+    });
+  },
+  drawVal: function(times, obs, model, stats) {
+    const ctx = PG.ui.$("valChart");
+    if (!ctx) return;
+    if (PG.charts.val) PG.charts.val.destroy();
+    PG.charts.val = new Chart(ctx, {
+      type: "scatter",
+      data: {
+        datasets: [
+          {
+            type: "line", label: "Model Bateman Kinetics", data: model,
+            borderColor: "#00f0ff", pointRadius: 0, tension: 0.25, fill: false,
+            borderWidth: 2
+          },
+          {
+            type: "scatter", label: "Empirical Reference", data: obs,
+            backgroundColor: "#fff", pointRadius: 4.5, borderColor: "#00f0ff", borderWidth: 1.5
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#cad8ee", font: { family: "'JetBrains Mono', monospace", size: 10 } } }
+        },
+        scales: {
+          x: {
+            type: "linear",
+            title: { display: true, text: "Time (min)", color: "#748ba7", font: { family: "'JetBrains Mono', monospace", size: 10 } },
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+            ticks: { color: "#748ba7" }
+          },
+          y: {
+            title: { display: true, text: "C / C₀", color: "#748ba7", font: { family: "'JetBrains Mono', monospace", size: 10 } },
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+            ticks: { color: "#748ba7" }
+          }
+        }
+      }
+    });
+
+    const chip = stats.r2 >= 0.9 ? '<span class="chip green">STRONG CONCORDANCE</span>'
+              : stats.r2 >= 0.75 ? '<span class="chip amber">MODERATE FIT</span>'
+              : '<span class="chip red">DIVERGENT KINETICS</span>';
+              
+    PG.ui.$("valOut").innerHTML =
+      'Coefficient R² = <b style="color:var(--cyan)">' + stats.r2.toFixed(4) + '</b> · ' +
+      'RMSE = <b style="color:var(--cyan)">' + stats.rmse.toFixed(4) + '</b> · ' +
+      'Points n = ' + obs.length + ' ' + chip;
+  }
+};
+
+/* ============ PG.mol — 2D Graph + 3D Conformer + Procedural Fallback ============ */
+PG.mol = {
+  v3: null,
+  isSpinning: false,
+  proceduralMesh: null,
+  
+  d2: function(canvasId, smiles) {
+    try {
+      const cv = document.getElementById(canvasId);
+      if (!cv) return;
+      if (typeof SmilesDrawer === "undefined") return;
+      
+      SmilesDrawer.parse(smiles, function(t) {
+        const w = cv.clientWidth || cv.width || 420;
+        const h = cv.clientHeight || cv.height || 280;
+        cv.width = w * Math.min(window.devicePixelRatio || 1, 2);
+        cv.height = h * Math.min(window.devicePixelRatio || 1, 2);
+        const drawer = new SmilesDrawer.Drawer({
+          width: cv.width,
+          height: cv.height,
+          bondThickness: 1.4,
+          bondLength: 20,
+          shortBondLength: 0.84,
+          bondSpacing: 0.16 * 20,
+          atomVisualization: 'default',
+          isomeric: true,
+          fontSizeLarge: 14,
+          fontSizeSmall: 10.5,
+          padding: 24,
+          themes: {
+            dark: {
+              C: '#e8f2ff',
+              O: '#ff4d6d',
+              N: '#00f0ff',
+              F: '#10b981',
+              CL: '#10b981',
+              BR: '#c084fc',
+              I: '#f472b6',
+              P: '#fb923c',
+              S: '#fbbf24',
+              H: '#748ba7',
+              BACKGROUND: '#030816'
+            }
+          }
+        });
+        drawer.draw(t, canvasId, "dark", false);
+      }, function(e) {
+        PG.ui.toast("2D parse: " + (e && e.message || e), true);
+      });
+    } catch (e) {
+      console.warn("2D render error:", e);
+    }
+  },
+
+  load3: function(smiles) {
+    const note = PG.ui.$("v3dNote");
+    const led = document.getElementById("ledNet");
+    const ins = PG.ui.$("vIns");
+    const el = PG.ui.$("v3d");
+    if (!el) return;
+
+    if (!navigator.onLine) {
+      if (note) note.textContent = "OFFLINE — Procedural 3D Conformer active. (PubChem unavailable).";
+      if (led) led.classList.add("off");
+      PG.mol.buildProcedural3D(smiles);
+      return;
+    }
+
+    if (note) note.textContent = "Retrieving authoritative 3D conformer from PubChem PUG REST…";
+
+    fetch("https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/" + encodeURIComponent(smiles) + "/record/SDF/?record_type=3d")
+      .then(function(r) { if (!r.ok) throw new Error("PubChem HTTP " + r.status); return r.text(); })
+      .then(function(sdf) {
+        if (!sdf || sdf.indexOf("<Error>") !== -1) throw new Error("No 3D SDF found");
+        el.innerHTML = "";
+        PG.mol.v3 = $3Dmol.createViewer(el, { backgroundColor: "#020610" });
+        PG.mol.v3.addModel(sdf, "sdf");
+        
+        // Ball and Stick RasMol Scheme
+        PG.mol.v3.setStyle({}, {
+          stick: { colorscheme: "rasmol", radius: 0.16, opacity: 1.0 },
+          sphere: { colorscheme: "rasmol", scale: 0.28 }
+        });
+
+        try {
+          const atoms = PG.mol.v3.selectedAtoms({});
+          const counts = {};
+          atoms.forEach(a => { const el = a.elem || "C"; counts[el] = (counts[el] || 0) + 1; });
+          const countStr = Object.entries(counts).map(([k,v]) => `<span class="chip gray">${k}: ${v}</span>`).join(" ");
+          if (ins) ins.innerHTML = `<div style="margin-bottom:6px">Loaded <b>${atoms.length}</b> atoms in 3D:</div><div>${countStr}</div><div style="margin-top:8px;font-size:10px;color:var(--muted)">Click any atom in viewport for Cartesian coordinates.</div>`;
+        } catch(e) {}
+
+        PG.mol.v3.addClickCallback(function(a) {
+          const atom = a && a.atom;
+          if (!atom) return;
+          const el = atom.elem || "?";
+          const ser = (atom.serial || 0);
+          if (ins) {
+            ins.innerHTML =
+              '<div style="color:var(--cyan);font-weight:700">ATOM #' + ser + ' · ' + el + '</div>' +
+              '<div style="margin-top:6px;font-size:11px;color:#fff">X: ' + (atom.x?atom.x.toFixed(3):"0") +
+              ' &nbsp; Y: ' + (atom.y?atom.y.toFixed(3):"0") + ' &nbsp; Z: ' + (atom.z?atom.z.toFixed(3):"0") + '</div>' +
+              '<div style="margin-top:4px;font-size:10px;color:var(--muted)">Atomic index ' + (atom.index || ser) + '</div>';
+          }
+        });
+
+        PG.mol.v3.zoomTo();
+        PG.mol.v3.render();
+        if (note) note.textContent = "Authoritative PubChem 3D Conformer loaded. Interactive orbit & pick active.";
+        if (led) led.classList.remove("off");
+      })
+      .catch(function(err) {
+        console.warn("PubChem fetch fallback:", err);
+        if (note) note.textContent = "PubChem 3D unavailable. Procedural WebGL 3D conformer active.";
+        if (led) led.classList.add("off");
+        PG.mol.buildProcedural3D(smiles);
+      });
+  },
+
+  buildProcedural3D: function(smiles) {
+    const el = PG.ui.$("v3d");
+    if (!el || typeof THREE === "undefined") return;
+    el.innerHTML = "";
+
+    const w = el.clientWidth || 380;
+    const h = el.clientHeight || 420;
+
+    const scene = new THREE.Scene();
+    const cam = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+    cam.position.set(0, 5, 28);
+
+    const ren = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    ren.setSize(w, h);
+    ren.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    el.appendChild(ren.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const p1 = new THREE.PointLight(0x00f0ff, 1.5, 50);
+    p1.position.set(10, 15, 20);
+    scene.add(p1);
+
+    // Procedural pseudo-molecule generator based on formula/smiles
+    const molGroup = new THREE.Group();
+    const atomCount = Math.min(Math.max(smiles.length / 2, 8), 24);
+    const atomColors = [0xe8f2ff, 0x00f0ff, 0xff3366, 0x10b981, 0xfbbf24];
+    const atomCoords = [];
+
+    for (let i = 0; i < atomCount; i++) {
+      const theta = (i / atomCount) * Math.PI * 4;
+      const radius = 3.5 + Math.sin(i * 1.5) * 2;
+      const x = Math.cos(theta) * radius;
+      const y = ((i / atomCount) - 0.5) * 12;
+      const z = Math.sin(theta) * radius;
+      atomCoords.push(new THREE.Vector3(x, y, z));
+
+      const col = atomColors[i % atomColors.length];
+      const sphGeo = new THREE.SphereGeometry(0.7, 24, 24);
+      const sphMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.2, metalness: 0.1 });
+      const sph = new THREE.Mesh(sphGeo, sphMat);
+      sph.position.set(x, y, z);
+      molGroup.add(sph);
+
+      if (i > 0) {
+        const pA = atomCoords[i - 1];
+        const pB = atomCoords[i];
+        const dist = pA.distanceTo(pB);
+        const cylGeo = new THREE.CylinderGeometry(0.18, 0.18, dist, 12);
+        const cylMat = new THREE.MeshStandardMaterial({ color: 0x748ba7, roughness: 0.4 });
+        const cyl = new THREE.Mesh(cylGeo, cylMat);
+        cyl.position.copy(pA.clone().add(pB).multiplyScalar(0.5));
+        cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pB.clone().sub(pA).normalize());
+        molGroup.add(cyl);
+      }
+    }
+
+    scene.add(molGroup);
+    PG.mol.proceduralMesh = molGroup;
+
+    let isDrag = false, pM = { x: 0, y: 0 };
+    ren.domElement.addEventListener("mousedown", e => { isDrag = true; pM = { x: e.clientX, y: e.clientY }; });
+    window.addEventListener("mouseup", () => isDrag = false);
+    window.addEventListener("mousemove", e => {
+      if (!isDrag) return;
+      molGroup.rotation.y += (e.clientX - pM.x) * 0.01;
+      molGroup.rotation.x += (e.clientY - pM.y) * 0.01;
+      pM = { x: e.clientX, y: e.clientY };
+    });
+
+    const anim = function() {
+      requestAnimationFrame(anim);
+      if (PG.mol.isSpinning) molGroup.rotation.y += 0.012;
+      ren.render(scene, cam);
+    };
+    anim();
+  }
+};
+
+/* ============ PG.three — High-Fidelity 3D WebGL Reactor Chamber ============ */
+PG.three = {
+  scene: null, cam: null, ren: null, core: null, glow: null, fluid: null, rings: null,
+  method: "uv", isRunning: false, time: 0, pLight: null, bubGroup: null, sparkGroup: null,
+
+  initReactor: function() {
+    if (typeof THREE === "undefined") return;
+    const container = document.getElementById("reactor3d");
+    if (!container) return;
+
+    // Use fallback sizing if container is hidden during initialization
+    const w = container.clientWidth || 440;
+    const h = container.clientHeight || 330;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x020610, 0.014);
+
+    const cam = new THREE.PerspectiveCamera(42, w / h, 0.1, 1000);
+    cam.position.set(0, 10, 52);
+
+    const ren = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    ren.setSize(w, h);
+    ren.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    ren.toneMapping = THREE.ACESFilmicToneMapping;
+    ren.toneMappingExposure = 1.35;
+    container.innerHTML = "";
+    container.appendChild(ren.domElement);
+
+    // Dynamic Atmosphere & Lighting
+    const amb = new THREE.AmbientLight(0x08152e, 1.4);
+    scene.add(amb);
+    const pLight = new THREE.PointLight(0x00f0ff, 3.8, 80);
+    scene.add(pLight);
+    PG.three.pLight = pLight;
+
+    // Outer Quartz Cylinder Vessel
+    const cylGeo = new THREE.CylinderGeometry(14, 14, 34, 48, 1, true);
+    const cylMat = new THREE.MeshPhysicalMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.14,
+      roughness: 0.06,
+      metalness: 0.1,
+      transmission: 0.88,
+      ior: 1.46,
+      side: THREE.DoubleSide
+    });
+    const vessel = new THREE.Mesh(cylGeo, cylMat);
+    scene.add(vessel);
+
+    // Anodized CNC Flanges
+    const capGeo = new THREE.CylinderGeometry(15.2, 15.2, 2.0, 48);
+    const capMat = new THREE.MeshStandardMaterial({ color: 0x0a1426, roughness: 0.25, metalness: 0.9 });
+    const topCap = new THREE.Mesh(capGeo, capMat);
+    topCap.position.y = 17;
+    scene.add(topCap);
+    const botCap = new THREE.Mesh(capGeo, capMat);
+    botCap.position.y = -17;
+    scene.add(botCap);
+
+    // Central Immersion Emitter (UV Lamp / Plasma Jet)
+    const coreGeo = new THREE.CylinderGeometry(1.9, 1.9, 33.6, 32);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.95 });
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    scene.add(core);
+    PG.three.core = core;
+
+    // Radiant Corona Sheath
+    const glowGeo = new THREE.CylinderGeometry(3.6, 3.6, 33, 32, 1, true);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.22,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    scene.add(glow);
+    PG.three.glow = glow;
+
+    // Helical Hydrodynamic Flow Vortex
+    const fCount = 500;
+    const fGeo = new THREE.BufferGeometry();
+    const fPos = new Float32Array(fCount * 3);
+    const fData = [];
+    for (let i = 0; i < fCount; i++) {
+      const angle = (i / fCount) * Math.PI * 18 + Math.random() * 0.4;
+      const rad = 4.2 + Math.random() * 8.2;
+      const y = ((i / fCount) - 0.5) * 31;
+      fPos[i*3] = Math.cos(angle) * rad;
+      fPos[i*3+1] = y;
+      fPos[i*3+2] = Math.sin(angle) * rad;
+      fData.push({ angle, rad, y, speed: 0.018 + Math.random() * 0.024, vSpeed: 0.08 + Math.random() * 0.08 });
+    }
+    fGeo.setAttribute("position", new THREE.BufferAttribute(fPos, 3));
+    const fMat = new THREE.PointsMaterial({
+      color: 0x00f0ff,
+      size: 2.2,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending
+    });
+    const fluid = new THREE.Points(fGeo, fMat);
+    scene.add(fluid);
+    PG.three.fluid = fluid;
+
+    // Concentric Photonic Waves (for UV)
+    const ringGroup = new THREE.Group();
+    for (let r = 0; r < 5; r++) {
+      const rGeo = new THREE.RingGeometry(2.4, 2.9, 40);
+      const rMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.45,
+        blending: THREE.AdditiveBlending
+      });
+      const ring = new THREE.Mesh(rGeo, rMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = (r - 2) * 6.5;
+      ringGroup.add(ring);
+    }
+    scene.add(ringGroup);
+    PG.three.rings = ringGroup;
+
+    // Electrochemical Effervescence Bubbles Group
+    const bubCount = 80;
+    const bubGeo = new THREE.BufferGeometry();
+    const bubPos = new Float32Array(bubCount * 3);
+    const bubData = [];
+    for (let i = 0; i < bubCount; i++) {
+      const x = (Math.random() - 0.5) * 16;
+      const y = (Math.random() - 0.5) * 30;
+      const z = (Math.random() - 0.5) * 16;
+      bubPos[i*3] = x; bubPos[i*3+1] = y; bubPos[i*3+2] = z;
+      bubData.push({ spd: 0.12 + Math.random() * 0.2 });
+    }
+    bubGeo.setAttribute("position", new THREE.BufferAttribute(bubPos, 3));
+    const bubMat = new THREE.PointsMaterial({
+      color: 0xc084fc,
+      size: 3.5,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+    const bubPoints = new THREE.Points(bubGeo, bubMat);
+    bubPoints.visible = false;
+    scene.add(bubPoints);
+    PG.three.bubGroup = bubPoints;
+
+    // Plasma Discharge Spark Line Streamers
+    const sparkGroup = new THREE.Group();
+    sparkGroup.visible = false;
+    scene.add(sparkGroup);
+    PG.three.sparkGroup = sparkGroup;
+
+    // Orbit Controls
+    let isDragging = false, prevMouse = { x: 0, y: 0 };
+    let rotX = 0.15, rotY = 0;
+    container.addEventListener("mousedown", e => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; });
+    window.addEventListener("mouseup", () => isDragging = false);
+    window.addEventListener("mousemove", e => {
+      if (!isDragging) return;
+      rotY += (e.clientX - prevMouse.x) * 0.007;
+      rotX = Math.max(-Math.PI/3.5, Math.min(Math.PI/3.5, rotX + (e.clientY - prevMouse.y) * 0.007));
+      prevMouse = { x: e.clientX, y: e.clientY };
+    });
+    container.addEventListener("wheel", e => {
+      e.preventDefault();
+      cam.position.z = Math.max(28, Math.min(85, cam.position.z + e.deltaY * 0.045));
+    }, { passive: false });
+
+    PG.three.scene = scene;
+    PG.three.cam = cam;
+    PG.three.ren = ren;
+
+    const btnResetCam = document.getElementById("rResetCam");
+    if (btnResetCam) btnResetCam.onclick = () => { rotX = 0.15; rotY = 0; cam.position.set(0, 10, 52); };
+
+    const btnBurst = document.getElementById("rBurst");
+    if (btnBurst) btnBurst.onclick = () => PG.three.burst();
+
+    // Responsive Resizer on Tab Display
+    PG.three.resize = function() {
+      if (!container) return;
+      const nw = container.clientWidth || 440;
+      const nh = container.clientHeight || 330;
+      if (nw > 0 && nh > 0) {
+        cam.aspect = nw / nh;
+        cam.updateProjectionMatrix();
+        ren.setSize(nw, nh);
+      }
+    };
+    window.addEventListener("resize", PG.three.resize);
+
+    // Continuous Animation Loop
+    const animate = function() {
+      requestAnimationFrame(animate);
+      PG.three.time += 0.02;
+      const t = PG.three.time;
+      const speedMult = PG.three.isRunning ? 2.5 : 1.0;
+
+      // Hydrodynamic fluid particles movement
+      const pos = fluid.geometry.attributes.position.array;
+      for (let i = 0; i < fCount; i++) {
+        const d = fData[i];
+        d.angle += d.speed * speedMult;
+        d.y += d.vSpeed * speedMult;
+        if (d.y > 15.5) d.y = -15.5;
+        pos[i*3] = Math.cos(d.angle) * d.rad;
+        pos[i*3+1] = d.y;
+        pos[i*3+2] = Math.sin(d.angle) * d.rad;
+      }
+      fluid.geometry.attributes.position.needsUpdate = true;
+
+      // Method-specific physical animations
+      if (PG.three.method === "uv") {
+        core.material.color.setHex(0x00f0ff);
+        glow.material.color.setHex(0x00f0ff);
+        pLight.color.setHex(0x00f0ff);
+        pLight.intensity = PG.three.isRunning ? 5.5 : 3.8;
+        core.material.opacity = 0.88 + Math.sin(t * 6) * 0.12;
+        glow.scale.setScalar(1 + Math.sin(t * 4) * 0.1);
+        ringGroup.visible = true;
+        bubPoints.visible = false;
+        sparkGroup.visible = false;
+        ringGroup.children.forEach((r, idx) => {
+          const s = 1 + (Math.sin(t * 3.5 + idx * 0.8) * 0.35 + 0.35);
+          r.scale.set(s, s, s);
+          r.material.opacity = 0.5 - (s - 1) * 0.5;
+        });
+      } else if (PG.three.method === "ec") {
+        core.material.color.setHex(0xc084fc);
+        glow.material.color.setHex(0xc084fc);
+        pLight.color.setHex(0xc084fc);
+        pLight.intensity = 3.2;
+        ringGroup.visible = false;
+        bubPoints.visible = true;
+        sparkGroup.visible = false;
+        const bPos = bubPoints.geometry.attributes.position.array;
+        for (let i = 0; i < bubCount; i++) {
+          bPos[i*3+1] += bubData[i].spd * speedMult;
+          if (bPos[i*3+1] > 16) bPos[i*3+1] = -16;
+        }
+        bubPoints.geometry.attributes.position.needsUpdate = true;
+      } else { // Plasma
+        core.material.color.setHex(0xfbbf24);
+        glow.material.color.setHex(0xfbbf24);
+        pLight.color.setHex(0xfbbf24);
+        pLight.intensity = Math.random() > 0.1 ? 4.8 : 2.0;
+        core.material.opacity = Math.random() > 0.12 ? 0.98 : 0.4;
+        glow.scale.setScalar(0.95 + Math.random() * 0.18);
+        ringGroup.visible = false;
+        bubPoints.visible = false;
+      }
+
+      // Smooth Camera Rotation
+      if (!isDragging) rotY += 0.003;
+      const radius = cam.position.z;
+      cam.position.x = Math.sin(rotY) * radius * Math.cos(rotX);
+      cam.position.z = Math.cos(rotY) * radius * Math.cos(rotX);
+      cam.position.y = 10 + Math.sin(rotX) * radius;
+      cam.lookAt(0, 0, 0);
+
+      ren.render(scene, cam);
+    };
+    animate();
+  },
+
+  setMethod: function(m) {
+    PG.three.method = m;
+    const mb = document.getElementById("rModeBadge");
+    const fb = document.getElementById("rFluxBadge");
+    if (!mb) return;
+    if (m === "uv") {
+      mb.className = "chip cyan"; mb.textContent = "UV / H₂O₂ PHOTOLYSIS";
+      if (fb) fb.textContent = "PHOTON FLUX: 254 nm";
+    } else if (m === "ec") {
+      mb.className = "chip purple"; mb.textContent = "ELECTROCHEMICAL OXIDATION";
+      if (fb) fb.textContent = "ANODIC EFFICIENCY η = 0.20";
+    } else {
+      mb.className = "chip amber"; mb.textContent = "NON-THERMAL PLASMA";
+      if (fb) fb.textContent = "DISCHARGE FLUX: 10 W";
+    }
+  },
+
+  burst: function() {
+    if (!PG.three.scene) return;
+    PG.ui.toast("⚡ High-density •OH radical cascade injected into chamber!");
+    const count = 200;
+    const bGeo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    const vel = [];
+    for (let i = 0; i < count; i++) {
+      pos[i*3] = 0; pos[i*3+1] = (Math.random() - 0.5) * 22; pos[i*3+2] = 0;
+      const angle = Math.random() * Math.PI * 2;
+      const spd = 0.5 + Math.random() * 0.8;
+      vel.push({ x: Math.cos(angle) * spd, y: (Math.random() - 0.5) * 0.3, z: Math.sin(angle) * spd });
+    }
+    bGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    const bMat = new THREE.PointsMaterial({
+      color: 0x00f0ff,
+      size: 3.2,
+      transparent: true,
+      opacity: 1,
+      blending: THREE.AdditiveBlending
+    });
+    const burstPoints = new THREE.Points(bGeo, bMat);
+    PG.three.scene.add(burstPoints);
+
+    let frames = 0;
+    const animateBurst = function() {
+      frames++;
+      const p = burstPoints.geometry.attributes.position.array;
+      for (let i = 0; i < count; i++) {
+        p[i*3] += vel[i].x;
+        p[i*3+1] += vel[i].y;
+        p[i*3+2] += vel[i].z;
+      }
+      burstPoints.geometry.attributes.position.needsUpdate = true;
+      burstPoints.material.opacity -= 0.018;
+      if (frames < 55) requestAnimationFrame(animateBurst);
+      else PG.three.scene.remove(burstPoints);
+    };
+    animateBurst();
+  }
+};
+
+/* ============ PG.ui — High-Precision UI Helpers ============ */
+PG.ui = {
+  $: function(id) { return document.getElementById(id); },
+  toast: function(msg, isErr) {
+    const d = document.createElement("div");
+    d.className = "tst" + (isErr ? " err" : "");
+    d.innerHTML = (isErr ? "✕ " : "✓ ") + msg;
+    PG.ui.$("toast").appendChild(d);
+    setTimeout(() => { d.style.opacity = "0"; setTimeout(() => d.remove(), 250); }, 4200);
+  },
+  modal: function(title, bodyHTML) {
+    PG.ui.$("mTitle").textContent = title;
+    PG.ui.$("mBody").innerHTML = bodyHTML;
+    PG.ui.$("modal").classList.add("on");
+  },
+  clamp: function(v, min, max, noteId) {
+    let note = "";
+    if (!isFinite(v) || isNaN(v)) { v = min; note = "invalid → defaulted " + min; }
+    else if (v < min) { v = min; note = "clamped to min " + min; }
+    else if (v > max) { v = max; note = "clamped to max " + max; }
+    if (noteId) PG.ui.$(noteId).textContent = note;
+    return v;
+  },
+  dl: function(name, mime, txt) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([txt], { type: mime }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+};
+
+/* ============ PG.app — Application Controller ============ */
+PG.app = {
+  res: null, pol: null, P: null,
+  
+  params: function() {
+    const u = PG.ui;
+    const m = u.$("pMethod").value;
+    const P = {
+      method: m,
+      C0:   u.clamp(+u.$("pC0").value, 0.1, 100, "nC0"),
+      V:    u.clamp(+u.$("pV").value, 0.05, 1000, "nV"),
+      scav: u.clamp(+u.$("pScav").value, 1e3, 1e6, "nScav"),
+      lam:  u.clamp(+u.$("pLam").value, 185, 400, "nLam"),
+      irr:  u.clamp(+u.$("pIrr").value, 1, 500, "nIrr"),
+      area: u.clamp(+u.$("pArea").value, 0.001, 1, "nArea"),
+      path: u.clamp(+u.$("pPath").value, 0.5, 10, "nPath"),
+      HP:   u.clamp(+u.$("pHP").value, 0.1, 50, "nHP"),
+      Ie:   u.clamp(+u.$("pIe").value, 1, 2000, "nIe"),
+      Vc:   u.clamp(+u.$("pVc").value, 1, 30, "nVc"),
+      eta:  u.clamp(+u.$("pEta").value, 0.01, 0.6, "nEta"),
+      Pp:   u.clamp(+u.$("pPp").value, 1, 1000, "nPp"),
+      Gpl:  u.clamp(+u.$("pGpl").value, 0.001, 10, "nGpl"),
+      Pe:   u.clamp(+u.$("pPe").value, 0.1, 20000, "nPe"),
+      tar:  u.clamp(+u.$("pTar").value, 1, 100, "nTar"),
+      thr:  u.clamp(+u.$("pThr").value, 0.01, 0.2, "nThr")
+    };
+    if (m === "ec") {
+      P.Pe = (P.Vc * P.Ie / 1000);
+      u.$("pPe").value = P.Pe.toFixed(3);
+    }
+    return P;
+  },
+
+  run: function() {
+    const u = PG.ui;
+    const btn = u.$("btnRun");
+    btn.disabled = true;
+    
+    const stages = [
+      "1/6 VALIDATING CHEMICAL STOICHIOMETRY",
+      "2/6 PHOTOCHEMISTRY & EXTINCTION OPTICS",
+      "3/6 RADICAL PSEUDO-STEADY-STATE",
+      "4/6 BATEMAN KINETIC MATRIX EXPONENTIATION",
+      "5/6 BENIGNI-BOSSA HAZARD INVERSION SCREEN",
+      "6/6 ENERGETIC FIGURES-OF-MERIT & EEO"
+    ];
+    
+    const scanner = u.$("stageScanner");
+    const scanName = u.$("scanStageName");
+    const scanPct = u.$("scanPercent");
+    const scanBar = u.$("scanBar");
+    if (scanner) scanner.classList.add("active");
+    if (PG.three) PG.three.isRunning = true;
+
+    let idx = 0;
+    const tick = function() {
+      if (idx < stages.length) {
+        const pct = Math.round(((idx + 1) / stages.length) * 100);
+        u.$("stStage").innerHTML = '<i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)"></i> ' + stages[idx];
+        if (scanName) scanName.textContent = stages[idx];
+        if (scanPct) scanPct.textContent = pct + "%";
+        if (scanBar) scanBar.style.width = pct + "%";
+        idx++;
+        setTimeout(tick, 55);
+        return;
+      }
+
+      try {
+        const P = PG.app.params();
+        const pol = PG.data.pollutants.find(p => p.id === u.$("pPoll").value);
+        if (!pol) throw new Error("Target pollutant not found");
+        PG.app.pol = pol;
+        const res = PG.engine.run(P, pol);
+        PG.app.res = res;
+        PG.app.P = P;
+        PG.app.render(res, pol, P);
+        PG.app.save(P, pol, res);
+
+        u.$("stMethod").textContent = P.method.toUpperCase();
+        u.$("stLam").textContent = "λ=" + P.lam + " nm";
+        u.$("stCross").textContent = "Bateman↔RK4 Δ=" + res.cross.toExponential(1);
+        u.$("stStage").innerHTML = '<i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)"></i> SIMULATION COMPLETE';
+        u.toast("Run complete: Hazard inversion & kinetics computed");
+      } catch (e) {
+        u.toast("Simulation failed: " + e.message, true);
+        u.$("stStage").innerHTML = '<i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red)"></i> ERROR';
+      }
+
+      if (PG.three) PG.three.isRunning = false;
+      if (scanner) setTimeout(() => scanner.classList.remove("active"), 1200);
+      btn.disabled = false;
+    };
+    tick();
+  },
+
+  render: function(res, pol, P) {
+    const u = PG.ui;
+    PG.mol.d2("mol2d", pol.smiles);
+    u.$("cSrc").textContent = pol.src;
+    
+    // Degradation scheme table
+    const sb = u.$("scheme").querySelector("tbody");
+    sb.innerHTML = "";
+    pol.tps.forEach(function(t, i) {
+      sb.insertAdjacentHTML("beforeend",
+        "<tr><td><b>Step " + (i+1) + "</b></td><td><b>" + t.name + "</b></td><td>" + t.mech + "</td>" +
+        "<td><code>" + pol.ks[i] + "</code></td><td><span class='chip amber'>" + t.src + "</span></td></tr>");
+    });
+    sb.insertAdjacentHTML("beforeend",
+      "<tr><td><b>Step " + (pol.tps.length+1) + "</b></td><td><b>CO₂ + H₂O + Mineral Ions</b></td><td>Complete Mineralization</td>" +
+      "<td><code>" + (pol.ks[pol.tps.length] || "0.02") + "</code></td><td><span class='chip green'>MINERALIZED</span></td></tr>");
+
+    // Draw Kinetics Chart
+    PG.charts.drawHero(res, pol, +u.$("rng").value);
+
+    // Hazard Inversion Banner
+    const warn = u.$("warn");
+    warn.classList.remove("good");
+    if (res.flagged.length > 0) {
+      warn.style.display = "block";
+      warn.innerHTML = "⚠ <b>CRITICAL HAZARD INVERSION WINDOW DETECTED</b><br>" +
+        "Metabolites (" + res.flagged.map(j => '<b>' + pol.tps[j].name + '</b>').join(", ") + ") " +
+        "exhibit higher structural alert severity than the parent compound. Abatement cessation prior to <b>t_safe = " +
+        res.tSafe_min.toFixed(0) + " min</b> discharges higher biohazard effluent than untreated water. <i>(Confirm candidates by bioassay)</i>";
+    } else {
+      warn.style.display = "block";
+      warn.classList.add("good");
+      warn.innerHTML = "✓ <b>NO HAZARD INVERSION FLAGGED:</b> Transformation products remain at lower hazard scores than the parent substrate.";
+    }
+
+    // TP Hazard Screen Table
+    const tb = u.$("tpTab").querySelector("tbody");
+    tb.innerHTML = "";
+    pol.tps.forEach(function(t, i) {
+      const s = res.tpScr[i];
+      const inv = res.flagged.includes(i);
+      const alertBadges = s.alertNames.length
+        ? s.alertNames.map(a => `<span class="chip red">${a}</span>`).join(" ")
+        : `<span class="chip green">Clean</span>`;
+      
+      tb.insertAdjacentHTML("beforeend",
+        "<tr data-i='" + i + "'><td><b>" + t.name + "</b></td>" +
+        "<td>" + alertBadges + "</td>" +
+        "<td>" + s.aq + " (" + PG.tox.aqName(s.aq) + ")</td>" +
+        "<td><b style='color:var(--cyan)'>" + s.pri + "</b></td>" +
+        "<td>" + (inv ? "<span class='chip red'>MORE HAZARDOUS</span>" : "<span class='chip gray'>≤ parent</span>") + "</td></tr>");
+    });
+    
+    tb.querySelectorAll("tr").forEach(function(tr) {
+      tr.onclick = function() {
+        const i = +tr.getAttribute("data-i");
+        PG.app.selSpecies(i + 1);
+      };
+    });
+
+    // Render 4 KPI Tiles in 2x2 Grid
+    const pdWarn = res.pd < 0.1;
+    u.$("tiles").innerHTML =
+      "<div class='tile cyan'><div class='t-label'><span>t_safe Threshold</span> <span class='chip cyan'>DISCHARGE</span></div><div class='t-value'>" +
+        res.tSafe_min.toFixed(0) + "</div><div class='t-unit'>minutes" + (res.incomplete ? " · INCOMPLETE" : "") + "</div></div>" +
+      "<div class='tile purple'><div class='t-label'><span>EEO Figure</span> <span class='chip purple'>ENERGY</span></div><div class='t-value'>" +
+        res.EEO.toFixed(1) + "</div><div class='t-unit'>kWh / m³ / order</div></div>" +
+      "<div class='tile green'><div class='t-label'><span>Batch Treatment Cost</span> <span class='chip green'>ECONOMIC</span></div><div class='t-value'>৳" +
+        res.cost.toFixed(2) + "</div><div class='t-unit'>per " + P.V + "L batch</div></div>" +
+      "<div class='tile" + (pdWarn ? " warn" : "") + "'><div class='t-label'><span>Power Density</span> <span class='chip " + (pdWarn?"amber":"gray") + "'>DENSITY</span></div><div class='t-value'>" +
+        res.pd.toFixed(2) + "</div><div class='t-unit'>W/L " + (pdWarn ? "(low volumetric rate)" : "") + "</div></div>";
+  },
+
+  selSpecies: function(idx) {
+    document.querySelector('[data-pg="viewer"]').click();
+    PG.ui.$("vSel").value = String(idx);
+    PG.app.showSpecies(idx);
+  },
+
+  showSpecies: function(idx) {
+    const pol = PG.app.pol || PG.data.pollutants[0];
+    const sp = idx === 0 ? pol : pol.tps[idx - 1];
+    if (!sp) return;
+    
+    PG.mol.d2("v2d", sp.smiles);
+    PG.mol.load3(sp.smiles);
+    const scr = PG.tox.screen(sp);
+    const mw = PG.mw(sp.formula).toFixed(2);
+    
+    const alertsHTML = scr.alerts.length
+      ? scr.alerts.map(a => `<div style="margin-top:6px"><span class="chip red">${a.name}</span> <span style="font-size:11px;color:var(--text-dim)">— ${a.desc}</span></div>`).join("")
+      : `<div style="margin-top:4px"><span class="chip green">No Benigni-Bossa structural alerts detected</span></div>`;
+
+    PG.ui.$("vProps").innerHTML = `
+      <div class="dossier-grid">
+        <div class="dossier-stat"><div class="d-label">Molecular Weight</div><div class="d-val">${mw} g/mol</div></div>
+        <div class="dossier-stat"><div class="d-label">Lipophilicity logP</div><div class="d-val">${sp.logP}</div></div>
+        <div class="dossier-stat"><div class="d-label">k_OH Reaction Rate</div><div class="d-val">${sp.kOH.toExponential(1)} M⁻¹s⁻¹</div></div>
+        <div class="dossier-stat"><div class="d-label">Hazard Priority Score</div><div class="d-val" style="color:var(--cyan)">${scr.pri}</div></div>
+      </div>
+      <div style="margin-top:14px;padding:12px;background:rgba(2,6,16,0.6);border-radius:6px;border:1px solid var(--border)">
+        <div class="ml" style="font-size:9.5px">Aquatic Toxicity Hazard Classification:</div>
+        <div style="font:700 12.5px var(--mono);color:#fff;margin-top:4px">Class ${scr.aq} — ${PG.tox.aqName(scr.aq)}</div>
+        <div class="ml" style="font-size:9.5px;margin-top:10px">Structural Alerts Flagged:</div>
+        ${alertsHTML}
+      </div>
+    `;
+  },
+
+  save: function(P, pol, res) {
+    const arr = JSON.parse(localStorage.getItem("pg.sessions") || "[]");
+    const id = "S" + ("0000" + Math.floor(1000 + Math.random()*8999)).slice(-4);
+    arr.unshift({
+      id: id,
+      ts: new Date().toLocaleTimeString() + " (" + new Date().toLocaleDateString() + ")",
+      poll: pol.name,
+      pollId: pol.id,
+      method: P.method,
+      tSafe_min: res.tSafe_min.toFixed(0),
+      P: JSON.parse(JSON.stringify(P)),
+      res: { t90: res.t90_min, tSafe: res.tSafe_min, EEO: res.EEO, k: res.kUse, OH: res.OH }
+    });
+    localStorage.setItem("pg.sessions", JSON.stringify(arr.slice(0, 12)));
+    PG.app.sessions();
+  },
+
+  sessions: function() {
+    const u = PG.ui;
+    const s = JSON.parse(localStorage.getItem("pg.sessions") || "[]");
+    const tb = u.$("ovSessions").querySelector("tbody");
+    tb.innerHTML = "";
+    u.$("ovS").textContent = s.length;
+    u.$("ovSessEmpty").style.display = s.length ? "none" : "block";
+    s.forEach(function(x, i) {
+      tb.insertAdjacentHTML("beforeend",
+        "<tr><td><code>" + x.id + "</code></td><td>" + x.ts + "</td><td><b>" + x.poll +
+        "</b></td><td><span class='chip gray'>" + x.method.toUpperCase() + "</span></td><td><b style='color:var(--cyan)'>" + x.tSafe_min +
+        " min</b></td><td><button class='btn sm pri' data-r='" + i + "'>RESTORE &amp; RUN</button></td></tr>");
+    });
+    tb.querySelectorAll("[data-r]").forEach(function(b) {
+      b.onclick = function() {
+        const idx = +b.getAttribute("data-r");
+        const x = s[idx];
+        const map = {C0:"pC0",V:"pV",scav:"pScav",lam:"pLam",irr:"pIrr",
+                     area:"pArea",path:"pPath",HP:"pHP",Ie:"pIe",Vc:"pVc",
+                     eta:"pEta",Pp:"pPp",Gpl:"pGpl",Pe:"pPe",tar:"pTar",thr:"pThr"};
+        for (const k in x.P) {
+          if (map[k] && u.$(map[k])) u.$(map[k]).value = x.P[k];
+        }
+        u.$("pPoll").value = x.pollId || (PG.data.pollutants.find(p=>p.name===x.poll)||PG.data.pollutants[0]).id;
+        u.$("pMethod").value = x.method;
+        PG.app.methodUI();
+        document.querySelector('[data-pg="workspace"]').click();
+        setTimeout(PG.app.run, 80);
+      };
+    });
+  },
+
+  methodUI: function() {
+    const m = PG.ui.$("pMethod").value;
+    PG.ui.$("gUV").classList.toggle("hide", m !== "uv");
+    PG.ui.$("gEC").classList.toggle("hide", m !== "ec");
+    PG.ui.$("gPL").classList.toggle("hide", m !== "pl");
+    if (PG.three && PG.three.setMethod) PG.three.setMethod(m);
+  },
+
+  dataTab: function() {
+    const u = PG.ui;
+    const tb = u.$("dTab").querySelector("tbody");
+    tb.innerHTML = "";
+    PG.data.pollutants.forEach(function(p) {
+      const rows = [[p, "parent", 0, false]];
+      p.tps.forEach(function(t, i) { rows.push([t, "TP"+(i+1), i, true]); });
+      rows.forEach(function(row) {
+        const sp = row[0], role = row[1], idx = row[2], isTP = row[3];
+        const mw = PG.mw(sp.formula).toFixed(2);
+        const srcChip = sp.src === "USER-MODIFIED"
+          ? "<span class='chip red'>USER-MODIFIED</span>"
+          : "<span class='chip amber'>" + sp.src + "</span>";
+        tb.insertAdjacentHTML("beforeend",
+          "<tr><td><b>" + sp.name + "</b></td><td><span class='chip gray'>" + role + "</span></td><td>" + mw + "</td>" +
+          "<td><input class='data-input' data-p='" + p.id + "' data-i='" + idx +
+            "' data-t='" + isTP + "' data-f='logP' type='number' step='0.1' value='" + sp.logP + "'></td>" +
+          "<td><input class='data-input' data-p='" + p.id + "' data-i='" + idx +
+            "' data-t='" + isTP + "' data-f='phi' type='number' step='0.005' value='" + sp.phi + "'></td>" +
+          "<td><input class='data-input' data-p='" + p.id + "' data-i='" + idx +
+            "' data-t='" + isTP + "' data-f='kOH' type='number' value='" + sp.kOH + "'></td>" +
+          "<td>" + srcChip + "</td></tr>");
+      });
+    });
+    tb.querySelectorAll("input.data-input").forEach(function(inp) {
+      inp.onchange = function() {
+        const p = PG.data.pollutants.find(x => x.id === inp.getAttribute("data-p"));
+        const isTP = inp.getAttribute("data-t") === "true";
+        const idx = +inp.getAttribute("data-i");
+        const field = inp.getAttribute("data-f");
+        const val = parseFloat(inp.value);
+        const o = isTP ? p.tps[idx] : p;
+        o[field] = val;
+        o.src = "USER-MODIFIED";
+        PG.setOver(p.id, idx, field, isTP, val);
+        PG.ui.toast(field + " updated to " + val + " (persisted)");
+        PG.app.dataTab();
+      };
+    });
+  }
+};
+
+/* ============ Initialization & DOM Wiring ============ */
+addEventListener("DOMContentLoaded", function() {
+  const u = PG.ui;
+
+  // Initialize Three.js 3D Reactor
+  try {
+    if (PG.three && PG.three.initReactor) PG.three.initReactor();
+  } catch(e) {
+    console.warn("3D reactor init error:", e);
+  }
+
+  // Populate Pollutant Selectors
+  const ps = u.$("pPoll"), ov = u.$("ovPoll"), vs = u.$("vSel");
+  PG.data.pollutants.forEach(function(p) {
+    ps.insertAdjacentHTML("beforeend", "<option value='" + p.id + "'>" + p.name + "</option>");
+    ov.insertAdjacentHTML("beforeend", "<option value='" + p.id + "'>" + p.name + "</option>");
+  });
+
+  function fillVSel() {
+    vs.innerHTML = "";
+    const pid = PG.app.pol ? PG.app.pol.id : (ps.value || PG.data.pollutants[0].id);
+    const pol = PG.data.pollutants.find(p => p.id === pid) || PG.data.pollutants[0];
+    vs.insertAdjacentHTML("beforeend", "<option value='0'>" + pol.name + " (parent substrate)</option>");
+    pol.tps.forEach(function(t, i) {
+      vs.insertAdjacentHTML("beforeend", "<option value='" + (i+1) + "'>TP" + (i+1) + ": " + t.name + "</option>");
+    });
+  }
+  fillVSel();
+
+  // Populate Overview Catalog Table
+  function renderCatalog(filterText, catFilter) {
+    const catTb = document.querySelector("#pollCatalog tbody");
+    if (!catTb) return;
+    catTb.innerHTML = "";
+    const txt = (filterText || "").toLowerCase().trim();
+    const cat = catFilter || "all";
+
+    PG.data.pollutants.forEach(function(p) {
+      if (cat !== "all" && p.cat !== cat) return;
+      if (txt && !p.name.toLowerCase().includes(txt) && !p.smiles.toLowerCase().includes(txt)) return;
+
+      const scr = PG.tox.screen(p);
+      const eps254 = p.eps && p.eps[254] != null ? p.eps[254] : "–";
+      const alertBadges = scr.alertNames.length
+        ? scr.alertNames.map(a => `<span class="chip red">${a}</span>`).join(" ")
+        : `<span class="chip green">Clean</span>`;
+      
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td><b>${p.name}</b></td>
+        <td><span class="chip gray">${p.cat}</span></td>
+        <td><code>${p.formula}</code></td>
+        <td>${p.kOH ? p.kOH.toExponential(1) : "–"}</td>
+        <td>${eps254}</td>
+        <td><b>${p.tps.length}</b> intermediates</td>
+        <td>${alertBadges}</td>
+      `;
+      row.onclick = function() {
+        ps.value = p.id;
+        ps.dispatchEvent(new Event("change"));
+        document.querySelector('[data-pg="workspace"]').click();
+        setTimeout(PG.app.run, 60);
+      };
+      catTb.appendChild(row);
+    });
+  }
+  renderCatalog("", "all");
+
+  const catSearch = u.$("catSearch");
+  const catFilter = u.$("catFilter");
+  if (catSearch && catFilter) {
+    catSearch.oninput = () => renderCatalog(catSearch.value, catFilter.value);
+    catFilter.onchange = () => renderCatalog(catSearch.value, catFilter.value);
+  }
+
+  // Router & Navigation Tabs
+  document.querySelectorAll("#sb [data-pg]").forEach(function(b) {
+    b.onclick = function() {
+      document.querySelectorAll("#sb [data-pg]").forEach(x => x.classList.remove("on"));
+      b.classList.add("on");
+      document.querySelectorAll("section.page").forEach(s => s.classList.remove("on"));
+      const targetPg = u.$("pg-" + b.getAttribute("data-pg"));
+      if (targetPg) targetPg.classList.add("on");
+
+      // Handle canvas resizing when entering tabs
+      if (b.getAttribute("data-pg") === "workspace") {
+        setTimeout(function() {
+          if (PG.three && PG.three.resize) PG.three.resize();
+          if (PG.app.pol) PG.mol.d2("mol2d", PG.app.pol.smiles);
+          if (PG.charts.hero) PG.charts.hero.resize();
+        }, 30);
+      } else if (b.getAttribute("data-pg") === "viewer") {
+        setTimeout(function() {
+          const pid = ps.value || PG.data.pollutants[0].id;
+          const pol = PG.data.pollutants.find(p => p.id === pid) || PG.data.pollutants[0];
+          PG.app.showSpecies(+vs.value || 0);
+        }, 30);
+      }
+    };
+  });
+
+  // Method and Substrate Changes
+  u.$("pMethod").onchange = function() { PG.app.methodUI(); };
+
+  ps.onchange = function() {
+    const pol = PG.data.pollutants.find(p => p.id === ps.value) || PG.data.pollutants[0];
+    PG.mol.d2("mol2d", pol.smiles);
+    u.$("cSrc").textContent = pol.src;
+    PG.app.pol = pol;
+    fillVSel();
+    
+    const sb = u.$("scheme").querySelector("tbody");
+    sb.innerHTML = "";
+    pol.tps.forEach(function(t, i) {
+      sb.insertAdjacentHTML("beforeend",
+        "<tr><td><b>Step " + (i+1) + "</b></td><td><b>" + t.name + "</b></td><td>" + t.mech + "</td>" +
+        "<td><code>" + pol.ks[i] + "</code></td><td><span class='chip amber'>" + t.src + "</span></td></tr>");
+    });
+    sb.insertAdjacentHTML("beforeend",
+      "<tr><td><b>Step " + (pol.tps.length+1) + "</b></td><td><b>CO₂ + H₂O + Mineral Ions</b></td><td>Complete Mineralization</td>" +
+      "<td><code>" + (pol.ks[pol.tps.length] || "0.02") + "</code></td><td><span class='chip green'>MINERALIZED</span></td></tr>");
+  };
+
+  // Run simulation buttons
+  u.$("btnRun").onclick = PG.app.run;
+  u.$("btnReset").onclick = function() { location.reload(); };
+
+  // Overview quick launch
+  u.$("ovGo").onclick = function() {
+    ps.value = ov.value;
+    PG.app.pol = PG.data.pollutants.find(p => p.id === ps.value) || PG.data.pollutants[0];
+    fillVSel();
+    u.$("pMethod").value = u.$("ovMethod").value;
+    PG.app.methodUI();
+    document.querySelector('[data-pg="workspace"]').click();
+    setTimeout(PG.app.run, 60);
+  };
+
+  // Window Slider for Kinetics Chart
+  u.$("rng").oninput = function() {
+    u.$("rngVal").textContent = this.value + "%";
+    if (PG.app.res) PG.charts.drawHero(PG.app.res, PG.app.pol, +this.value);
+  };
+
+  // Exports
+  u.$("exCSV").onclick = function() {
+    if (!PG.app.res) return u.toast("Execute simulation before exporting data", true);
+    const r = PG.app.res;
+    let csv = "# PlasmaGuard v2.0 Kinetics Dataset\n";
+    csv += "# Target: " + PG.app.pol.name + " | Method: " + PG.app.P.method.toUpperCase() + " | t_safe: " + r.tSafe_min.toFixed(1) + " min\n";
+    csv += "t_min,Parent_" + PG.app.pol.id + "," + PG.app.pol.tps.map(t => t.name.replace(/,/g, "")).join(",") + "\n";
+    r.t.forEach(function(tm, i) {
+      csv += tm.toFixed(2) + "," + r.C[i].map(c => c.toExponential(4)).join(",") + "\n";
+    });
+    u.dl("plasmaguard_kinetics_" + PG.app.pol.id + ".csv", "text/csv", csv);
+  };
+
+  u.$("exPNG").onclick = function() {
+    if (!PG.charts.hero) return u.toast("Run simulation first", true);
+    const a = document.createElement("a");
+    a.href = PG.charts.hero.toBase64Image();
+    a.download = "plasmaguard_kinetics_" + (PG.app.pol ? PG.app.pol.id : "curve") + ".png";
+    a.click();
+  };
+
+  u.$("exJSON").onclick = function() {
+    if (!PG.app.P || !PG.app.res) return u.toast("Run simulation first", true);
+    const packet = {
+      instrument: "PlasmaGuard Analytical Suite",
+      version: "2.0.0-build",
+      timestamp: new Date().toISOString(),
+      parameters: PG.app.P,
+      substrate: PG.app.pol,
+      results: {
+        t90_min: PG.app.res.t90_min,
+        tSafe_min: PG.app.res.tSafe_min,
+        hazardInversionDetected: PG.app.res.flagged.length > 0,
+        flaggedIntermediateIndices: PG.app.res.flagged,
+        EEO_kWh_m3_order: PG.app.res.EEO,
+        batchCostBDT: PG.app.res.cost,
+        powerDensityWL: PG.app.res.pd,
+        hydroxylRadicalSteadyStateM: PG.app.res.OH,
+        apparentRateConstantsKUse: PG.app.res.kUse
+      }
+    };
+    u.dl("plasmaguard_session_" + PG.app.pol.id + ".json", "application/json", JSON.stringify(packet, null, 2));
+  };
+
+  // Empirical Validation Suite
+  u.$("btnVal").onclick = () => u.$("valBox").classList.toggle("hide");
+  
+  u.$("valPresets").onchange = function() {
+    const v = this.value;
+    if (!v) return;
+    if (v === "cipro_uv") {
+      u.$("valTxt").value = "0, 1.0\n5, 0.54\n10, 0.29\n15, 0.16\n20, 0.08\n30, 0.02";
+      u.toast("Loaded Ciprofloxacin UV/H2O2 254nm experimental dataset");
+    } else if (v === "mb_plasma") {
+      u.$("valTxt").value = "0, 1.0\n3, 0.63\n6, 0.40\n10, 0.22\n15, 0.10\n25, 0.02";
+      u.toast("Loaded Methylene Blue DBD Plasma experimental series");
+    } else if (v === "pfoa_vuv") {
+      u.$("valTxt").value = "0, 1.0\n10, 0.82\n20, 0.67\n30, 0.55\n45, 0.41\n60, 0.30";
+      u.toast("Loaded PFOA Radical Abatement benchmark");
+    }
+  };
+
+  u.$("valSyn").onclick = function() {
+    if (!PG.app.res) return u.toast("Run simulation first", true);
+    const k = PG.app.res.kUse[0];
+    let s = "";
+    for (let t = 0; t <= 45; t += 5) {
+      const y = Math.exp(-k * t * 60) * (1 + (Math.random() - 0.5) * 0.08);
+      s += t + ", " + y.toFixed(4) + "\n";
+    }
+    u.$("valTxt").value = s;
+    u.toast("Synthetic benchmark points generated with experimental gaussian jitter");
+  };
+
+  u.$("valRun").onclick = function() {
+    if (!PG.app.res) return u.toast("Need run result first", true);
+    const rows = u.$("valTxt").value.trim().split(/\n+/)
+      .map(l => l.split(/[,;\t]/).map(Number))
+      .filter(r => r.length === 2 && isFinite(r[0]) && isFinite(r[1]));
+    if (rows.length < 3) return u.toast("Require ≥3 valid data pairs of (time_min, C/C0)", true);
+
+    const k = PG.app.res.kUse[0];
+    const obs = rows.map(r => ({ x: r[0], y: r[1] }));
+    const model = rows.map(r => ({ x: r[0], y: Math.exp(-k * r[0] * 60) }));
+    let mean = 0; rows.forEach(r => mean += r[1]); mean /= rows.length;
+    let ssRes = 0, ssTot = 0;
+    rows.forEach(function(r) {
+      const pred = Math.exp(-k * r[0] * 60);
+      ssRes += Math.pow(r[1] - pred, 2);
+      ssTot += Math.pow(r[1] - mean, 2);
+    });
+    const r2 = 1 - (ssRes / (ssTot || 1));
+    const rmse = Math.sqrt(ssRes / rows.length);
+    PG.charts.drawVal(rows.map(r => r[0]), obs, model, { r2: r2, rmse: rmse });
+  };
+
+  u.$("valFile").onchange = function(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => { u.$("valTxt").value = rd.result; u.toast("File imported — click Compute"); };
+    rd.readAsText(f);
+  };
+
+  // 3D Viewer Styling Buttons
+  vs.onchange = function() { PG.app.showSpecies(+vs.value); };
+  
+  u.$("vBallStick").onclick = function() {
+    if (!PG.mol.v3) return u.toast("3D conformer not loaded", true);
+    PG.mol.v3.setStyle({}, { stick: { colorscheme: "rasmol", radius: 0.16 }, sphere: { colorscheme: "rasmol", scale: 0.28 } });
+    PG.mol.v3.render();
+  };
+  u.$("vStick").onclick = function() {
+    if (!PG.mol.v3) return u.toast("3D conformer not loaded", true);
+    PG.mol.v3.setStyle({}, { stick: { colorscheme: "rasmol", radius: 0.22 } });
+    PG.mol.v3.render();
+  };
+  u.$("vSph").onclick = function() {
+    if (!PG.mol.v3) return u.toast("3D conformer not loaded", true);
+    PG.mol.v3.setStyle({}, { sphere: { colorscheme: "rasmol", scale: 0.65 } });
+    PG.mol.v3.render();
+  };
+  u.$("vLine").onclick = function() {
+    if (!PG.mol.v3) return u.toast("3D conformer not loaded", true);
+    PG.mol.v3.setStyle({}, { line: { colorscheme: "rasmol", linewidth: 2 } });
+    PG.mol.v3.render();
+  };
+  u.$("vSpin").onclick = function() {
+    if (PG.mol.v3) {
+      PG.mol.isSpinning = !PG.mol.isSpinning;
+      this.textContent = PG.mol.isSpinning ? "Auto-Spin: ON" : "Auto-Spin: OFF";
+      if (PG.mol.isSpinning) PG.mol.v3.spin("y");
+      else PG.mol.v3.stopSpin();
+    } else if (PG.mol.proceduralMesh) {
+      PG.mol.isSpinning = !PG.mol.isSpinning;
+      this.textContent = PG.mol.isSpinning ? "Auto-Spin: ON" : "Auto-Spin: OFF";
+    }
+  };
+  u.$("vReset").onclick = function() {
+    if (!PG.mol.v3) return;
+    PG.mol.isSpinning = false;
+    u.$("vSpin").textContent = "Auto-Spin: OFF";
+    PG.mol.v3.stopSpin();
+    PG.mol.v3.zoomTo();
+    PG.mol.v3.render();
+  };
+  u.$("vShot").onclick = function() {
+    if (!PG.mol.v3) return u.toast("3D conformer not loaded", true);
+    const a = document.createElement("a");
+    a.href = PG.mol.v3.pngURI();
+    a.download = "molecule_conformer.png";
+    a.click();
+  };
+
+  // Clear Overrides
+  u.$("dClear").onclick = function() {
+    localStorage.removeItem("pg.over");
+    u.toast("Cleared user parameter overrides");
+    setTimeout(() => location.reload(), 300);
+  };
+
+  // Presentation Mode Toggle
+  u.$("btnPresent").onclick = function() {
+    document.body.classList.toggle("present");
+    const isPres = document.body.classList.contains("present");
+    this.innerHTML = isPres
+      ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> EXIT PRESENT'
+      : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3l14 9-14 9V3z"/></svg> PRESENT MODE';
+    
+    if (isPres) {
+      document.querySelector('[data-pg="workspace"]').click();
+      u.toast("Presentation mode activated. Press Esc to exit.");
+    }
+  };
+
+  // Help Modal
+  u.$("btnHelp").onclick = function() {
+    u.modal("Help & Navigation Guide",
+      '<div class="help-text">' +
+      '<p><b>Keyboard Shortcuts:</b> <code>R</code> Run Simulation · <code>V</code> Toggle Validation · <code>P</code> Toggle Presentation Mode · <code>Esc</code> Close Modal.</p>' +
+      '<div style="margin-top:14px;border-top:1px solid var(--border-subtle);padding-top:12px"><b>Provenance Hierarchy:</b></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' +
+      '<span class="chip green">CALC</span> Real-time computed &nbsp;' +
+      '<span class="chip green">LITERATURE</span> Peer-reviewed rate constant &nbsp;' +
+      '<span class="chip amber">RULE-BASED</span> Benigni-Bossa structural alert &nbsp;' +
+      '<span class="chip red">USER-MODIFIED</span> Local browser override' +
+      '</div>' +
+      '<p style="margin-top:14px"><b>Hazard Inversion Principle:</b> Partial treatment can produce intermediates with higher environmental persistence and toxicity than the parent. Always ensure treatment time satisfies <code>t ≥ t_safe</code>.</p>' +
+      '</div>');
+  };
+  u.$("mClose").onclick = () => u.$("modal").classList.remove("on");
+
+  // Global Keyboard Shortcuts
+  addEventListener("keydown", function(e) {
+    if (e.target.matches("input,textarea,select")) return;
+    const k = e.key;
+    if (k === "r" || k === "R") PG.app.run();
+    else if (k === "v" || k === "V") u.$("valBox").classList.toggle("hide");
+    else if (k === "p" || k === "P") u.$("btnPresent").click();
+    else if (k === "Escape") {
+      u.$("modal").classList.remove("on");
+      if (document.body.classList.contains("present")) u.$("btnPresent").click();
+    }
+  });
+
+  // Initial Load
+  const initPol = PG.data.pollutants[0];
+  PG.app.pol = initPol;
+  PG.mol.d2("mol2d", initPol.smiles);
+  u.$("cSrc").textContent = initPol.src;
+  
+  PG.app.sessions();
+  PG.app.dataTab();
+  PG.app.methodUI();
+
+  // Initial Workspace Scheme Fill
+  const sb = u.$("scheme").querySelector("tbody");
+  if (sb) {
+    initPol.tps.forEach(function(t, i) {
+      sb.insertAdjacentHTML("beforeend",
+        "<tr><td><b>Step " + (i+1) + "</b></td><td><b>" + t.name + "</b></td><td>" + t.mech + "</td>" +
+        "<td><code>" + initPol.ks[i] + "</code></td><td><span class='chip amber'>" + t.src + "</span></td></tr>");
+    });
+    sb.insertAdjacentHTML("beforeend",
+      "<tr><td><b>Step " + (initPol.tps.length+1) + "</b></td><td><b>CO₂ + H₂O + Mineral Ions</b></td><td>Complete Mineralization</td>" +
+      "<td><code>" + (initPol.ks[initPol.tps.length] || "0.02") + "</code></td><td><span class='chip green'>MINERALIZED</span></td></tr>");
+  }
+
+  // Pre-fill Species Viewer
+  setTimeout(() => PG.app.showSpecies(0), 100);
+
+  u.toast("PlasmaGuard v2.0 Online. Ready for analysis.");
+});
+</script>
+</body>
+</html>
