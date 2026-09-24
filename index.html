@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PlasmaGuard v2.0 — AOP Transformation-Product Analytical Instrument</title>
+<title>PlasmaGuard — AOP Transformation Product Analysis</title>
 
 <!-- Typography: Google Fonts with local fallbacks -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Orbitron:wght@500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Offline libraries pre-vendored in ./libs/ -->
 <script src="libs/chart.umd.min.js"></script>
@@ -25,66 +25,66 @@
 </script>
 
 <style>
-/* ── Color Palette & Design Tokens ────────────────────────────────────────── */
+/* ── Design Tokens — clean, neutral, professional ─────────────────────── */
 :root {
-  --bg-deep: #020611;
-  --bg: #040918;
-  --bg2: #081226;
-  --bg-card: rgba(9, 20, 42, 0.72);
-  --bg-card-hover: rgba(14, 28, 58, 0.85);
-  
-  --surface: rgba(255, 255, 255, 0.035);
-  --surface-h: rgba(255, 255, 255, 0.07);
-  --border: rgba(56, 189, 248, 0.14);
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-active: rgba(56, 189, 248, 0.45);
-  --border-focus: #00f0ff;
-  
-  --text: #f1f6ff;
-  --text-dim: #cad8ee;
-  --muted: #748ba7;
-  --dim: #3e526e;
-  
-  --cyan: #00f0ff;
-  --cyan-rgb: 0, 240, 255;
-  --cyan-s: rgba(0, 240, 255, 0.12);
-  --cyan-g: rgba(0, 240, 255, 0.28);
-  
-  --purple: #c084fc;
-  --purple-rgb: 192, 132, 252;
-  --purple-s: rgba(192, 132, 252, 0.12);
-  
-  --red: #ff3366;
-  --red-rgb: 255, 51, 102;
-  --red-s: rgba(255, 51, 102, 0.12);
-  
-  --amber: #fbbf24;
-  --amber-rgb: 251, 191, 36;
-  --amber-s: rgba(251, 191, 36, 0.12);
-  
-  --green: #10b981;
-  --green-rgb: 16, 185, 129;
-  --green-s: rgba(16, 185, 129, 0.12);
-  
-  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  --ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --display: 'Orbitron', 'Space Grotesk', var(--mono);
-  --heading: 'Space Grotesk', var(--ui);
-  
-  --r: 12px;
-  --r-sm: 8px;
-  --r-lg: 16px;
-  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(56, 189, 248, 0.1);
-  --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.25);
+  --bg-deep: #f4f6f9;
+  --bg: #f4f6f9;
+  --bg2: #eef1f5;
+  --bg-card: #ffffff;
+  --bg-card-hover: #ffffff;
+
+  --surface: #f8fafc;
+  --surface-h: #eef2f7;
+  --border: #e2e8f0;
+  --border-subtle: #edf0f4;
+  --border-active: #cbd5e1;
+  --border-focus: #2563eb;
+
+  --text: #111827;
+  --text-dim: #374151;
+  --muted: #6b7280;
+  --dim: #9ca3af;
+
+  --cyan: #2563eb;
+  --cyan-rgb: 37, 99, 235;
+  --cyan-s: rgba(37, 99, 235, 0.08);
+  --cyan-g: rgba(37, 99, 235, 0.18);
+
+  --purple: #7c3aed;
+  --purple-rgb: 124, 58, 237;
+  --purple-s: rgba(124, 58, 237, 0.08);
+
+  --red: #dc2626;
+  --red-rgb: 220, 38, 38;
+  --red-s: rgba(220, 38, 38, 0.07);
+
+  --amber: #b45309;
+  --amber-rgb: 180, 83, 9;
+  --amber-s: rgba(180, 83, 9, 0.09);
+
+  --green: #059669;
+  --green-rgb: 5, 150, 105;
+  --green-s: rgba(5, 150, 105, 0.09);
+
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: var(--ui);
+  --heading: var(--ui);
+
+  --r: 10px;
+  --r-sm: 6px;
+  --r-lg: 14px;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-pop: 0 8px 24px -6px rgba(16, 24, 40, 0.12), 0 2px 6px rgba(16, 24, 40, 0.06);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 
 body {
-  background: var(--bg-deep);
+  background: var(--bg);
   color: var(--text);
-  font: 400 13px/1.6 var(--ui);
+  font: 400 13.5px/1.6 var(--ui);
   display: flex;
   min-height: 100vh;
   overflow-x: hidden;
@@ -92,173 +92,99 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Cyber Atmospheric Background ─────────────────────────────────────────── */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(circle 900px at 78% -10%, rgba(0, 240, 255, 0.08), transparent 70%),
-    radial-gradient(circle 750px at 15% 105%, rgba(192, 132, 252, 0.06), transparent 70%),
-    radial-gradient(circle 600px at 50% 50%, rgba(16, 185, 129, 0.025), transparent 80%),
-    linear-gradient(180deg, rgba(2,6,17,0.7) 0%, rgba(4,9,24,0.95) 100%);
-}
-
-/* Subtle micro-mesh grid overlay */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image: 
-    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-  background-size: 32px 32px;
-}
-
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
 #sb {
   width: 220px;
   flex: 0 0 220px;
-  background: rgba(4, 9, 22, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #ffffff;
   border-right: 1px solid var(--border);
-  padding: 18px 12px;
+  padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   position: sticky;
   top: 0;
   height: 100vh;
   z-index: 40;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
 }
 
 #sb .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 10px 18px;
+  gap: 10px;
+  padding: 6px 8px 16px;
   border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 10px;
   text-decoration: none;
 }
 
 #sb .logo-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #00f0ff 0%, #c084fc 100%);
+  background: var(--cyan);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
   position: relative;
 }
 
-#sb .logo-mark::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #00f0ff, #c084fc);
-  z-index: -1;
-  opacity: 0.35;
-  filter: blur(4px);
-}
-
 #sb .logo-mark svg {
-  width: 20px;
-  height: 20px;
-  fill: #020611;
-  filter: drop-shadow(0 1px 1px rgba(255,255,255,0.4));
+  width: 17px;
+  height: 17px;
+  fill: #ffffff;
 }
 
 #sb .logo-text {
-  font: 800 12.5px var(--display);
-  letter-spacing: 0.12em;
-  color: #fff;
+  font: 700 14px var(--ui);
+  letter-spacing: -0.01em;
+  color: var(--text);
   line-height: 1.15;
-  background: linear-gradient(90deg, #ffffff, #a5f3fc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 #sb .logo-ver {
-  font: 600 9.5px var(--mono);
-  color: var(--cyan);
-  margin-top: 3px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 500 10.5px var(--ui);
+  color: var(--muted);
+  margin-top: 1px;
 }
 
 #sb button {
   all: unset;
   cursor: pointer;
-  padding: 10px 14px;
+  padding: 8px 10px;
   border-radius: var(--r-sm);
   color: var(--muted);
-  font: 500 12.5px var(--ui);
+  font: 500 13px var(--ui);
   display: flex;
   align-items: center;
-  gap: 12px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 10px;
+  transition: background 0.15s, color 0.15s;
   position: relative;
 }
 
 #sb button svg {
-  width: 17px;
-  height: 17px;
+  width: 16px;
+  height: 16px;
   stroke: currentColor;
   stroke-width: 1.8;
   fill: none;
   flex-shrink: 0;
-  opacity: 0.7;
-  transition: all 0.2s;
+  opacity: 0.85;
 }
 
 #sb button:hover {
   background: var(--surface-h);
-  color: #fff;
-  transform: translateX(2px);
-}
-
-#sb button:hover svg {
-  opacity: 1;
-  stroke: var(--cyan);
-  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.4));
+  color: var(--text);
 }
 
 #sb button.on {
-  background: linear-gradient(90deg, rgba(0, 240, 255, 0.14) 0%, rgba(0, 240, 255, 0.02) 100%);
-  color: #fff;
+  background: var(--cyan-s);
+  color: var(--cyan);
   font-weight: 600;
-  border: 1px solid rgba(0, 240, 255, 0.25);
-  box-shadow: inset 0 0 12px rgba(0, 240, 255, 0.08);
 }
 
-#sb button.on::before {
-  content: "";
-  position: absolute;
-  left: -2px;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
-  border-radius: 4px;
-  background: var(--cyan);
-  box-shadow: 0 0 10px var(--cyan);
-}
-
-#sb button.on svg {
-  opacity: 1;
-  stroke: var(--cyan);
-  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.5));
-}
+#sb button.on svg { opacity: 1; stroke: var(--cyan); }
 
 #sb .sp { flex: 1; }
 
@@ -275,15 +201,14 @@ body::after {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font: 600 10px var(--mono);
+  font: 500 11px var(--ui);
   color: var(--green);
   background: var(--green-s);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 5px 8px;
 }
 
-/* ── Main Content Area ────────────────────────────────────────────────────── */
+/* ── Main Content Area ────────────────────────────────────────────────── */
 #main {
   flex: 1;
   display: flex;
@@ -293,26 +218,23 @@ body::after {
   z-index: 10;
 }
 
-/* ── Top Header Bar ──────────────────────────────────────────────────────── */
+/* ── Top Header Bar ──────────────────────────────────────────────────── */
 #top {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: 12px 24px;
   border-bottom: 1px solid var(--border);
-  background: rgba(3, 8, 20, 0.88);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: #ffffff;
   position: sticky;
   top: 0;
   z-index: 30;
 }
 
 #top h1 {
-  font: 700 12px var(--display);
-  letter-spacing: 0.14em;
-  color: #fff;
-  text-transform: uppercase;
+  font: 600 15px var(--ui);
+  letter-spacing: -0.01em;
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -320,22 +242,20 @@ body::after {
 
 #top h1::after {
   content: "AOP";
-  font: 600 9px var(--mono);
-  background: var(--cyan-s);
-  color: var(--cyan);
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  font: 500 10.5px var(--ui);
+  background: var(--surface-h);
+  color: var(--muted);
+  border: 1px solid var(--border);
   padding: 1px 6px;
   border-radius: 4px;
-  letter-spacing: 0.05em;
 }
 
 .led {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font: 600 10px var(--mono);
-  letter-spacing: 0.04em;
-  color: var(--text-dim);
+  font: 500 11.5px var(--ui);
+  color: var(--muted);
   background: var(--surface);
   padding: 4px 10px;
   border-radius: 999px;
@@ -347,54 +267,36 @@ body::after {
   height: 6px;
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: pulseLed 2s infinite ease-in-out;
 }
 
-.led.amber i {
-  background: var(--amber);
-  box-shadow: 0 0 8px var(--amber);
-}
+.led.amber i { background: var(--amber); }
 
-.led.off i {
-  background: var(--dim);
-  box-shadow: none;
-  animation: none;
-}
-
-@keyframes pulseLed {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.6; }
-}
+.led.off i { background: var(--dim); }
 
 #top .sp { flex: 1; }
 
-/* ── Global Buttons ───────────────────────────────────────────────────────── */
+/* ── Global Buttons ───────────────────────────────────────────────────── */
 .btn {
   all: unset;
   cursor: pointer;
-  padding: 7px 16px;
+  padding: 7px 14px;
   border-radius: var(--r-sm);
   border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font: 600 11.5px var(--mono);
-  letter-spacing: 0.04em;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #ffffff;
+  color: var(--text-dim);
+  font: 500 12.5px var(--ui);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   user-select: none;
 }
 
 .btn:hover {
-  border-color: var(--cyan);
-  color: #fff;
-  background: var(--cyan-s);
-  box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
-  transform: translateY(-1px);
+  border-color: var(--border-active);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .btn:active {
@@ -402,43 +304,41 @@ body::after {
 }
 
 .btn:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
-  box-shadow: none !important;
 }
 
 .btn.pri {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.2) 0%, rgba(192, 132, 252, 0.2) 100%);
+  background: var(--cyan);
   border-color: var(--cyan);
   color: #fff;
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
 }
 
 .btn.pri:hover {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.35) 0%, rgba(192, 132, 252, 0.35) 100%);
-  box-shadow: 0 0 24px rgba(0, 240, 255, 0.45);
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
 }
 
 .btn.danger {
-  background: var(--red-s);
-  border-color: rgba(255, 51, 102, 0.45);
-  color: #ffaec0;
+  background: #ffffff;
+  border-color: rgba(220, 38, 38, 0.4);
+  color: var(--red);
 }
 
 .btn.danger:hover {
-  background: rgba(255, 51, 102, 0.25);
+  background: var(--red-s);
   border-color: var(--red);
-  color: #fff;
-  box-shadow: 0 0 16px rgba(255, 51, 102, 0.35);
+  color: var(--red);
 }
 
 .btn.sm {
   padding: 4px 10px;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
-/* ── Tabbed Pages ─────────────────────────────────────────────────────────── */
+/* ── Tabbed Pages ─────────────────────────────────────────────────────── */
 #pages {
   flex: 1;
   padding: 22px 26px;
@@ -451,29 +351,22 @@ section.page {
 
 section.page.on {
   display: block;
-  animation: pageFade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: pageFade 0.18s ease-out;
 }
 
 @keyframes pageFade {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(3px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Scientific UI Cards & Panels ─────────────────────────────────────────── */
+/* ── Cards & Panels ───────────────────────────────────────────────────── */
 .panel {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: var(--r);
-  padding: 20px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  padding: 18px 20px;
   box-shadow: var(--shadow-card);
   position: relative;
-}
-
-.panel:hover {
-  border-color: var(--border-active);
 }
 
 .panel-header {
@@ -486,12 +379,11 @@ section.page.on {
 
 .grid { display: grid; gap: 16px; }
 
-/* ── Micro-Labels & Typography ────────────────────────────────────────────── */
+/* ── Section Labels & Typography ──────────────────────────────────────── */
 .ml {
-  font: 700 10.5px var(--mono);
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  text-transform: uppercase;
+  font: 600 12px var(--ui);
+  letter-spacing: 0;
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -502,8 +394,7 @@ section.page.on {
 .ml.amber { color: var(--amber); }
 .ml.green { color: var(--green); }
 
-/* ── KPI Metric Tiles ─────────────────────────────────────────────────────── */
-/* Overview stat tiles (4 columns) */
+/* ── KPI Metric Tiles ─────────────────────────────────────────────────── */
 .ov-tiles {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -511,7 +402,6 @@ section.page.on {
   margin-bottom: 18px;
 }
 
-/* Workspace results tiles (2x2 grid to fit in 390px sidebar comfortably) */
 #tiles {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -520,62 +410,46 @@ section.page.on {
 }
 
 .tile {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.01) 100%);
+  background: #ffffff;
   border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  padding: 14px 14px 12px;
+  border-radius: var(--r);
+  padding: 14px 16px 12px;
   position: relative;
-  overflow: hidden;
-  transition: all 0.2s;
-}
-
-.tile::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--cyan), transparent);
-  opacity: 0.6;
+  box-shadow: var(--shadow-card);
 }
 
 .tile:hover {
   border-color: var(--border-active);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .tile .t-label {
-  font: 700 9.5px var(--mono);
-  letter-spacing: 0.1em;
+  font: 500 11.5px var(--ui);
   color: var(--muted);
-  text-transform: uppercase;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 6px;
 }
 
 .tile .t-value {
-  font: 800 28px/1 var(--display);
-  color: #fff;
-  margin: 8px 0 4px;
+  font: 700 26px/1.15 var(--ui);
   letter-spacing: -0.02em;
-  text-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  color: var(--text);
+  margin: 6px 0 2px;
 }
 
 .tile .t-unit {
-  font: 500 10.5px var(--mono);
+  font: 400 11.5px var(--ui);
   color: var(--muted);
 }
 
-.tile.cyan .t-value { color: var(--cyan); text-shadow: 0 0 20px rgba(0, 240, 255, 0.4); }
-.tile.purple .t-value { color: var(--purple); text-shadow: 0 0 20px rgba(192, 132, 252, 0.4); }
-.tile.green .t-value { color: var(--green); text-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
-.tile.warn .t-value { color: var(--amber); text-shadow: 0 0 20px rgba(251, 191, 36, 0.4); }
-.tile.danger .t-value { color: var(--red); text-shadow: 0 0 20px rgba(255, 51, 102, 0.4); }
+.tile.cyan .t-value { color: var(--cyan); }
+.tile.purple .t-value { color: var(--purple); }
+.tile.green .t-value { color: var(--green); }
+.tile.warn .t-value { color: var(--amber); }
+.tile.danger .t-value { color: var(--red); }
 
-/* ── Workspace 3-Column Grid ──────────────────────────────────────────────── */
+/* ── Workspace 3-Column Grid ──────────────────────────────────────────── */
 #ws {
   grid-template-columns: 280px 1fr 390px;
   align-items: start;
@@ -600,7 +474,7 @@ section.page.on {
   #sb button { justify-content: center; padding: 10px 0; }
 }
 
-/* ── Form Inputs & Precision Steppers ─────────────────────────────────────── */
+/* ── Form Inputs ──────────────────────────────────────────────────────── */
 label.f {
   display: block;
   margin: 12px 0 4px;
@@ -610,53 +484,44 @@ label.f .f-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font: 600 11px var(--mono);
+  font: 500 12px var(--ui);
   color: var(--text-dim);
 }
 
 label.f .unit-tag {
-  font: 500 9.5px var(--mono);
-  color: var(--cyan);
-  background: var(--cyan-s);
-  border: 1px solid rgba(0, 240, 255, 0.2);
-  padding: 1px 5px;
+  font: 500 10.5px var(--ui);
+  color: var(--muted);
+  background: var(--surface-h);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
   border-radius: 4px;
 }
 
 input, select, textarea {
   width: 100%;
   margin-top: 5px;
-  background: rgba(3, 8, 20, 0.9);
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  color: #fff;
-  font: 500 12px var(--mono);
-  padding: 8px 12px;
-  transition: all 0.2s;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+  color: var(--text);
+  font: 400 12.5px var(--ui);
+  padding: 7px 10px;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.5);
-  background: rgba(4, 12, 28, 0.95);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-select {
-  cursor: pointer;
-}
-
-select option {
-  background: #081226;
-  color: #fff;
-}
+select { cursor: pointer; }
 
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  background: rgba(255, 255, 255, 0.08);
-  height: 6px;
+  background: var(--surface-h);
+  height: 4px;
   border-radius: 999px;
   padding: 0;
   border: none;
@@ -667,21 +532,21 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: var(--cyan);
-  box-shadow: 0 0 10px var(--cyan);
+  background: #ffffff;
+  border: 2px solid var(--cyan);
   cursor: pointer;
   transition: transform 0.1s;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.25);
+  transform: scale(1.15);
 }
 
 .note {
-  font: 500 10.5px var(--mono);
+  font: 400 11.5px var(--ui);
   color: var(--amber);
   min-height: 14px;
   margin-top: 3px;
@@ -689,10 +554,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .hide { display: none !important; }
 
-/* ── Scientific Molecule Canvases ─────────────────────────────────────────── */
+/* ── Molecule Canvases ────────────────────────────────────────────────── */
 canvas.mol {
   width: 100%;
-  background: #030816;
+  background: #fbfcfe;
   border-radius: var(--r-sm);
   border: 1px solid var(--border);
   display: block;
@@ -704,7 +569,7 @@ canvas.mol {
   border-radius: var(--r-sm);
   overflow: hidden;
   border: 1px solid var(--border);
-  background: #020610;
+  background: #fbfcfe;
   position: relative;
 }
 
@@ -713,7 +578,7 @@ canvas.mol {
   height: 330px;
   cursor: grab;
   border-radius: 0 0 var(--r-sm) var(--r-sm);
-  background: #020610;
+  background: #f8fafc;
 }
 
 #reactor3d:active { cursor: grabbing; }
@@ -722,9 +587,8 @@ canvas.mol {
   position: relative;
   height: 320px;
   margin-top: 12px;
-  background: rgba(2, 6, 16, 0.6);
+  background: transparent;
   border-radius: var(--r-sm);
-  border: 1px solid var(--border-subtle);
   padding: 8px;
 }
 
@@ -732,164 +596,123 @@ canvas.mol {
   position: relative;
   height: 230px;
   margin-top: 12px;
-  background: rgba(2, 6, 16, 0.6);
+  background: transparent;
   border-radius: var(--r-sm);
-  border: 1px solid var(--border-subtle);
   padding: 6px;
 }
 
-/* ── High-Tech Tables ─────────────────────────────────────────────────────── */
+/* ── Tables ───────────────────────────────────────────────────────────── */
 table {
   width: 100%;
   border-collapse: collapse;
-  font: 500 11.5px var(--mono);
+  font: 400 12.5px var(--ui);
   font-variant-numeric: tabular-nums;
 }
 
 th {
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 11.5px;
   text-align: left;
-  padding: 10px 10px;
+  padding: 9px 10px;
   border-bottom: 1px solid var(--border);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  background: var(--surface);
 }
 
 td {
   padding: 9px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
   color: var(--text-dim);
 }
 
 tbody tr {
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.12s ease;
 }
 
 tbody tr:hover td {
-  background: rgba(0, 240, 255, 0.06);
-  color: #fff;
+  background: var(--surface);
+  color: var(--text);
 }
 
-/* ── Badges & Chips ───────────────────────────────────────────────────────── */
+/* ── Badges & Chips ───────────────────────────────────────────────────── */
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2.5px 8px;
+  padding: 2px 8px;
   border-radius: 999px;
-  font: 700 9.5px var(--mono);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font: 500 11px var(--ui);
   white-space: nowrap;
 }
 
-.chip.red {
-  color: #ff99b0;
-  border: 1px solid rgba(255, 51, 102, 0.4);
-  background: var(--red-s);
-}
+.chip.red    { color: var(--red);    background: var(--red-s); }
+.chip.amber  { color: var(--amber);  background: var(--amber-s); }
+.chip.green  { color: var(--green);  background: var(--green-s); }
+.chip.gray   { color: var(--muted);  background: var(--surface-h); }
+.chip.cyan   { color: var(--cyan);   background: var(--cyan-s); }
+.chip.purple { color: var(--purple); background: var(--purple-s); }
 
-.chip.amber {
-  color: #fde68a;
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  background: var(--amber-s);
-}
-
-.chip.green {
-  color: #6ee7b7;
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  background: var(--green-s);
-}
-
-.chip.gray {
-  color: var(--muted);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface);
-}
-
-.chip.cyan {
-  color: var(--cyan);
-  border: 1px solid rgba(0, 240, 255, 0.4);
-  background: var(--cyan-s);
-}
-
-.chip.purple {
-  color: #d8b4fe;
-  border: 1px solid rgba(192, 132, 252, 0.4);
-  background: var(--purple-s);
-}
-
-/* ── Scientific Hazard Inversion Banner ───────────────────────────────────── */
+/* ── Warning Banner ───────────────────────────────────────────────────── */
 #warn {
   display: none;
   margin: 14px 0;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border-radius: var(--r-sm);
-  border-left: 4px solid var(--red);
-  background: linear-gradient(90deg, rgba(255, 51, 102, 0.15) 0%, rgba(255, 51, 102, 0.03) 100%);
-  border: 1px solid rgba(255, 51, 102, 0.25);
-  border-left-width: 4px;
-  font: 500 12px/1.65 var(--mono);
-  color: #ffd1dc;
-  box-shadow: 0 4px 20px rgba(255, 51, 102, 0.15);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-left: 3px solid var(--red);
+  background: var(--red-s);
+  font: 400 12.5px/1.65 var(--ui);
+  color: #7f1d1d;
 }
 
 #warn.good {
+  border-color: rgba(5, 150, 105, 0.25);
   border-left-color: var(--green);
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.03) 100%);
-  border-color: rgba(16, 185, 129, 0.25);
-  border-left-width: 4px;
-  color: #a7f3d0;
-  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+  background: var(--green-s);
+  color: #065f46;
 }
 
-/* ── Holographic Stage Scanner ────────────────────────────────────────────── */
+/* ── Stage Scanner ────────────────────────────────────────────────────── */
 #stageScanner {
   margin: 12px 0;
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.06) 0%, rgba(192, 132, 252, 0.03) 100%);
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--r-sm);
   padding: 12px 16px;
   display: none;
-  box-shadow: 0 0 24px rgba(0, 240, 255, 0.15);
 }
 
 #stageScanner.active {
   display: block;
-  animation: pageFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: pageFade 0.2s ease-out;
 }
 
 .stage-bar {
   height: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-h);
   border-radius: 999px;
   overflow: hidden;
   margin-top: 8px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .stage-bar-fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, var(--cyan), var(--purple), #34d399);
-  box-shadow: 0 0 12px var(--cyan);
-  transition: width 0.08s ease-out;
+  background: var(--cyan);
+  border-radius: 999px;
+  transition: width 0.08s linear;
 }
 
-/* ── Status Bar ───────────────────────────────────────────────────────────── */
+/* ── Status Bar ───────────────────────────────────────────────────────── */
 #status {
   display: flex;
   gap: 18px;
-  padding: 8px 24px;
+  padding: 7px 24px;
   border-top: 1px solid var(--border);
-  background: rgba(3, 8, 20, 0.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  font: 500 11px var(--mono);
+  background: #ffffff;
+  font: 400 11.5px var(--ui);
   color: var(--muted);
   align-items: center;
   position: sticky;
@@ -899,8 +722,7 @@ tbody tr:hover td {
 
 #stStage {
   color: var(--cyan);
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -908,7 +730,7 @@ tbody tr:hover td {
 
 #status .sp { flex: 1; }
 
-/* ── Notification Toasts ──────────────────────────────────────────────────── */
+/* ── Notification Toasts ──────────────────────────────────────────────── */
 #toast {
   position: fixed;
   right: 20px;
@@ -921,16 +743,16 @@ tbody tr:hover td {
 }
 
 .tst {
-  background: rgba(6, 14, 30, 0.96);
+  background: #ffffff;
   border: 1px solid var(--border);
-  border-left: 4px solid var(--cyan);
+  border-left: 3px solid var(--cyan);
   border-radius: var(--r-sm);
-  padding: 10px 16px;
-  font: 500 11.5px var(--mono);
-  color: #fff;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(0, 240, 255, 0.2);
+  padding: 10px 14px;
+  font: 400 12.5px var(--ui);
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
   pointer-events: auto;
-  animation: slideToast 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideToast 0.2s ease-out;
   max-width: 360px;
   display: flex;
   align-items: center;
@@ -939,26 +761,23 @@ tbody tr:hover td {
 
 .tst.err {
   border-left-color: var(--red);
-  color: #ffb5c5;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(255, 51, 102, 0.2);
+  color: var(--text);
 }
 
 @keyframes slideToast {
-  from { opacity: 0; transform: translateX(24px) scale(0.95); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
-/* ── Modal Dialog ─────────────────────────────────────────────────────────── */
+/* ── Modal Dialog ─────────────────────────────────────────────────────── */
 #modal {
   position: fixed;
   inset: 0;
-  background: rgba(2, 5, 14, 0.85);
+  background: rgba(15, 23, 42, 0.4);
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 120;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 #modal.on { display: flex; }
@@ -968,35 +787,35 @@ tbody tr:hover td {
   width: 92%;
   max-height: 85vh;
   overflow-y: auto;
-  background: #081226;
-  border: 1px solid var(--border-active);
+  background: #ffffff;
+  border: 1px solid var(--border);
   border-radius: var(--r);
   padding: 24px;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 240, 255, 0.15);
+  box-shadow: var(--shadow-pop);
+  color: var(--text);
 }
 
-/* ── Empty State ──────────────────────────────────────────────────── */
+/* ── Empty State ──────────────────────────────────────────────────────── */
 .empty {
   color: var(--muted);
-  font: 500 12px var(--mono);
+  font: 400 12.5px var(--ui);
   padding: 32px;
   text-align: center;
-  border: 1px dashed var(--border);
+  border: 1px dashed var(--border-active);
   border-radius: var(--r-sm);
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--surface);
 }
 
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .sp { flex: 1; }
 
-/* ── Reactor WebGL Panel ──────────────────────────────────────────────────── */
+/* ── Reactor Panel ────────────────────────────────────────────────────── */
 .reactor-panel {
-  background: #030816;
+  background: #fbfcfe;
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
   overflow: hidden;
   margin-top: 14px;
-  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
 }
 
 .reactor-header {
@@ -1005,7 +824,7 @@ tbody tr:hover td {
   justify-content: space-between;
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
-  background: rgba(6, 14, 30, 0.8);
+  background: var(--surface);
   gap: 8px;
   flex-wrap: wrap;
 }
@@ -1019,22 +838,21 @@ tbody tr:hover td {
   gap: 8px;
 }
 
-/* ── Presentation Mode ────────────────────────────────────────────────────── */
+/* ── Presentation Mode ────────────────────────────────────────────────── */
 body.present #sb, body.present #status { display: none; }
 body.present #pages { padding: 36px 48px; max-width: 1500px; margin: 0 auto; }
 .spot {
   outline: 2px solid var(--cyan);
-  outline-offset: 6px;
+  outline-offset: 4px;
   border-radius: var(--r);
-  box-shadow: 0 0 30px rgba(0, 240, 255, 0.35) !important;
 }
 
-/* ── Code / Math Displays ─────────────────────────────────────────────────── */
+/* ── Code / Math Displays ─────────────────────────────────────────────── */
 pre {
-  font: 500 11.5px/1.8 var(--mono);
+  font: 400 12px/1.8 var(--mono);
   color: var(--text-dim);
   white-space: pre-wrap;
-  background: rgba(3, 8, 20, 0.85);
+  background: var(--surface);
   padding: 14px 16px;
   border-radius: var(--r-sm);
   border: 1px solid var(--border);
@@ -1042,25 +860,25 @@ pre {
 }
 
 code {
-  background: var(--cyan-s);
+  background: var(--surface-h);
   padding: 2px 6px;
   border-radius: 4px;
-  font: 600 11px var(--mono);
-  color: var(--cyan);
-  border: 1px solid rgba(0, 240, 255, 0.25);
+  font: 500 11.5px var(--mono);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 ul.disclose {
   margin: 10px 0 0 20px;
-  font-size: 13px;
-  line-height: 2;
+  font-size: 13.5px;
+  line-height: 1.9;
   color: var(--text-dim);
 }
 
 ul.disclose li { margin-bottom: 4px; }
 
 .card {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
   padding: 14px 16px;
@@ -1068,10 +886,10 @@ ul.disclose li { margin-bottom: 4px; }
 }
 
 .help-text { font: 400 13.5px/1.8 var(--ui); color: var(--text-dim); }
-ol.refs { margin-left: 20px; font: 500 11.5px/2 var(--mono); margin-top: 10px; color: var(--text-dim); }
-input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 8px; font-size: 11px; }
+ol.refs { margin-left: 20px; font: 400 12.5px/1.9 var(--ui); margin-top: 10px; color: var(--text-dim); }
+input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 8px; font-size: 12px; }
 
-/* ── Chemical Dossier Styling in Viewer ───────────────────────────────────── */
+/* ── Chemical Dossier ─────────────────────────────────────────────────── */
 .dossier-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1080,24 +898,24 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
 }
 
 .dossier-stat {
-  background: rgba(4, 10, 24, 0.6);
+  background: var(--surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 8px 10px;
 }
 
 .dossier-stat .d-label {
-  font: 700 9px var(--mono);
+  font: 500 11px var(--ui);
   color: var(--muted);
-  text-transform: uppercase;
 }
 
 .dossier-stat .d-val {
-  font: 700 13px var(--mono);
-  color: #fff;
+  font: 600 13.5px var(--mono);
+  color: var(--text);
   margin-top: 2px;
 }
 </style>
+
 </head>
 <body>
 
@@ -1108,8 +926,8 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
       <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
     </div>
     <div>
-      <div class="logo-text">PLASMAGUARD</div>
-      <div class="logo-ver">v2.0 · INSTRUMENT</div>
+      <div class="logo-text">PlasmaGuard</div>
+      <div class="logo-ver">Version 2.0</div>
     </div>
   </div>
   
@@ -1142,7 +960,7 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
 
   <div class="sidebar-footer">
     <div class="badge-offline">
-      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)"></span>
+      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green)"></span>
       OFFLINE CAPABLE
     </div>
     <button id="btnHelp" style="padding:8px 12px">
@@ -1157,12 +975,12 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
   <!-- Top bar -->
   <header id="top">
     <h1>PlasmaGuard Analytical Suite</h1>
-    <span class="led"><i></i>ENGINE ONLINE</span>
-    <span class="led" id="ledNet"><i></i>PUBCHEM-3D READY</span>
+    <span class="led"><i></i>Engine ready</span>
+    <span class="led" id="ledNet"><i></i>PubChem 3D available</span>
     <div class="sp"></div>
     <button class="btn" id="btnPresent">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3l14 9-14 9V3z"/></svg>
-      PRESENT MODE
+      Present mode
     </button>
     <span class="chip gray" id="ver" style="font-family:var(--mono)">v2.0.0</span>
   </header>
@@ -1198,12 +1016,12 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
       <!-- Core Scientific Premise & Quick Launch -->
       <div class="panel" style="margin-bottom:18px">
         <div class="panel-header">
-          <div class="ml cyan">Core Scientific Axiom: The Hazard Inversion Paradigm</div>
-          <span class="chip amber">PUBLICATION-GRADE MODEL</span>
+          <div class="ml cyan">Core scientific premise: the hazard inversion paradigm</div>
+          <span class="chip amber">Publication-grade model</span>
         </div>
         <p style="font:400 13.5px/1.8 var(--ui);color:var(--text-dim);max-width:1100px">
           Partial oxidation in Advanced Oxidation Processes produces transformation products (TPs) that can be
-          <b style="color:#fff">more toxic, bioaccumulative, or hazardous</b> than the original parent contaminant.
+          <b style="color:var(--text)">more toxic, bioaccumulative, or hazardous</b> than the original parent contaminant.
           PlasmaGuard computes <em>precisely when</em> during treatment the water is most hazardous — the 
           <b style="color:var(--red)">hazard inversion window</b> — and computes the definitive run time (<code>t_safe</code>)
           required for genuine non-toxic discharge into aquatic ecosystems.
@@ -1211,14 +1029,14 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
         <div class="row" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
           <button class="btn pri" id="ovGo" style="padding:9px 24px;font-size:12px">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
-            LAUNCH WORKSPACE BENCHMARK
+            Run benchmark
           </button>
           <div style="display:flex;align-items:center;gap:8px">
-            <span class="ml" style="font-size:9.5px">TARGET:</span>
+            <span class="ml" style="font-weight:600;color:var(--muted)">Target:</span>
             <select id="ovPoll" style="width:240px;margin:0"></select>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
-            <span class="ml" style="font-size:9.5px">REACTOR:</span>
+            <span class="ml" style="font-weight:600;color:var(--muted)">Reactor:</span>
             <select id="ovMethod" style="width:190px;margin:0">
               <option value="uv">UV / H₂O₂ Photolysis</option>
               <option value="ec">Electrochemical Oxidation</option>
@@ -1271,7 +1089,7 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
       <div class="panel">
         <div class="panel-header">
           <div class="ml">Local Simulation Benchmarks</div>
-          <span class="ml" style="font-size:9.5px">BROWSER STORAGE CACHE</span>
+          <span class="ml" style="font-weight:600;color:var(--muted)">Browser storage cache</span>
         </div>
         <table id="ovSessions">
           <thead>
@@ -1417,7 +1235,7 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
           <div class="row" style="margin-top:20px">
             <button class="btn pri" id="btnRun" style="flex:1;padding:10px 14px;font-size:12px">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
-              RUN SIMULATION
+              Run simulation
             </button>
             <button class="btn" id="btnReset" title="Reset to curated defaults">↺</button>
           </div>
@@ -1427,7 +1245,7 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
         <div class="panel" id="centerCol">
           <div class="panel-header">
             <div class="ml">Parent Contaminant — 2D Topology</div>
-            <span class="chip cyan" id="cSrc">CURATED BENCHMARK</span>
+            <span class="chip cyan" id="cSrc">Curated benchmark</span>
           </div>
           <canvas class="mol" id="mol2d" style="height:260px;margin-bottom:14px"></canvas>
 
@@ -1435,18 +1253,18 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
           <div class="reactor-panel">
             <div class="reactor-header">
               <div class="row" style="gap:8px">
-                <span class="chip cyan" id="rModeBadge">UV / H₂O₂ PHOTOLYSIS</span>
-                <span class="chip gray" id="rFluxBadge">PHOTON FLUX: 254 nm</span>
+                <span class="chip cyan" id="rModeBadge">UV / H₂O₂ photolysis</span>
+                <span class="chip gray" id="rFluxBadge">Photon flux: 254 nm</span>
               </div>
               <div class="row" style="gap:6px">
-                <button class="btn sm pri" id="rBurst">⚡ •OH RADICAL BURST</button>
+                <button class="btn sm pri" id="rBurst">•OH radical burst</button>
                 <button class="btn sm" id="rResetCam" title="Reset chamber viewpoint">↺</button>
               </div>
             </div>
             <div style="position:relative">
               <div id="reactor3d"></div>
               <div class="reactor-badges">
-                <span class="chip green" id="rStateBadge">STEADY-STATE FLUID DYNAMICS</span>
+                <span class="chip green" id="rStateBadge">Steady-state flow</span>
               </div>
             </div>
           </div>
@@ -1468,9 +1286,9 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
           <!-- Holographic Stage Scanner -->
           <div id="stageScanner">
             <div class="row" style="font:700 11px var(--mono)">
-              <span style="color:var(--cyan)" id="scanStageName">PIPELINE INITIALIZING…</span>
+              <span style="color:var(--cyan)" id="scanStageName">Pipeline initializing…</span>
               <div class="sp"></div>
-              <span id="scanPercent" style="color:#fff">0%</span>
+              <span id="scanPercent" style="color:var(--text);font-weight:600">0%</span>
             </div>
             <div class="stage-bar"><div class="stage-bar-fill" id="scanBar"></div></div>
           </div>
@@ -1478,9 +1296,9 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
           <div class="panel-header">
             <div class="ml">Degradation Kinetics — Relative Concentration (C / C₀)</div>
             <div class="row" style="gap:6px">
-              <span class="ml" style="font-size:9.5px">HORIZON</span>
+              <span class="ml" style="font-weight:600;color:var(--muted)">Horizon</span>
               <input id="rng" type="range" min="10" max="100" value="100" style="width:85px;margin:0">
-              <span id="rngVal" class="chip gray" style="font-size:9px">100%</span>
+              <span id="rngVal" class="chip gray" style="font-size:11px">100%</span>
             </div>
           </div>
           <div id="heroWrap"><canvas id="hero"></canvas></div>
@@ -1490,7 +1308,7 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
 
           <div class="panel-header" style="margin:16px 0 6px">
             <div class="ml">Transformation Products — Hazard Prioritization</div>
-            <span class="ml" style="font-size:9px;color:var(--cyan)">CLICK ROW → 3D VIEW</span>
+            <span class="ml" style="font-weight:500;font-size:11px;color:var(--muted)">Click a row to view in 3D</span>
           </div>
           <table id="tpTab">
             <thead>
@@ -1722,12 +1540,12 @@ input.data-input { width: 105px; display: inline-block; margin: 0; padding: 4px 
 
   <!-- Persistent Status Bar -->
   <footer id="status">
-    <span id="stStage"><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)"></i> ENGINE READY</span>
+    <span id="stStage"><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green)"></i> ENGINE READY</span>
     <span id="stMethod">UV/H₂O₂</span>
     <span id="stLam">λ=254 nm</span>
     <span id="stCross">Bateman↔RK4 Δ=0.0e+0</span>
     <div class="sp"></div>
-    <span id="stProv" class="ml" style="font-size:9.5px">PROVENANCE: CODATA · BOLTON · BUXTON · BENIGNI-BOSSA</span>
+    <span id="stProv" class="ml" style="font-size:11px">Sources: CODATA · Bolton · Buxton · Benigni-Bossa</span>
   </footer>
 
 </div>
@@ -2242,32 +2060,32 @@ PG.charts = {
       const ctx = chart.ctx;
       ctx.save();
       const grad = ctx.createLinearGradient(l, 0, r, 0);
-      grad.addColorStop(0, "rgba(255, 51, 102, 0.22)");
-      grad.addColorStop(0.5, "rgba(255, 51, 102, 0.12)");
-      grad.addColorStop(1, "rgba(255, 51, 102, 0.04)");
+      grad.addColorStop(0, "rgba(220, 38, 38, 0.22)");
+      grad.addColorStop(0.5, "rgba(220, 38, 38, 0.12)");
+      grad.addColorStop(1, "rgba(220, 38, 38, 0.04)");
       ctx.fillStyle = grad;
       ctx.fillRect(l, ar.top, r - l, ar.bottom - ar.top);
       
       // Border lines
-      ctx.strokeStyle = "rgba(255, 51, 102, 0.8)";
+      ctx.strokeStyle = "rgba(220, 38, 38, 0.8)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
       ctx.moveTo(l, ar.top); ctx.lineTo(l, ar.bottom);
       ctx.stroke();
 
-      ctx.strokeStyle = "rgba(16, 185, 129, 0.85)";
+      ctx.strokeStyle = "rgba(5, 150, 105, 0.85)";
       ctx.beginPath();
       ctx.moveTo(r, ar.top); ctx.lineTo(r, ar.bottom);
       ctx.stroke();
 
       // Danger label
-      ctx.fillStyle = "#ff6688";
-      ctx.font = "bold 9.5px 'JetBrains Mono', monospace";
-      ctx.fillText("HAZARD INVERSION WINDOW", l + 8, ar.top + 18);
-      ctx.fillText("t_90 (Parent Abated)", l + 8, ar.bottom - 22);
-      ctx.fillStyle = "#10b981";
-      ctx.fillText("t_safe (Safe Discharge)", r - 120, ar.bottom - 22);
+      ctx.fillStyle = "#ef4444";
+      ctx.font = "600 10.5px Inter, sans-serif";
+      ctx.fillText("Hazard inversion window", l + 8, ar.top + 18);
+      ctx.fillText("t₉₀ (parent abated)", l + 8, ar.bottom - 22);
+      ctx.fillStyle = "#059669";
+      ctx.fillText("t_safe (safe discharge)", r - 120, ar.bottom - 22);
       ctx.restore();
     }
   },
@@ -2281,11 +2099,11 @@ PG.charts = {
     
     // Dataset colors
     const colors = [
-      { border: "#00f0ff", glow: "rgba(0, 240, 255, 0.25)" },
-      { border: "#ff3366", glow: "rgba(255, 51, 102, 0.25)" },
-      { border: "#c084fc", glow: "rgba(192, 132, 252, 0.25)" },
-      { border: "#fbbf24", glow: "rgba(251, 191, 36, 0.25)" },
-      { border: "#34d399", glow: "rgba(52, 211, 153, 0.25)" }
+      { border: "#2563eb", glow: "rgba(37, 99, 235, 0.25)" },
+      { border: "#dc2626", glow: "rgba(220, 38, 38, 0.25)" },
+      { border: "#8b5cf6", glow: "rgba(139, 92, 246, 0.25)" },
+      { border: "#d97706", glow: "rgba(217, 119, 6, 0.25)" },
+      { border: "#059669", glow: "rgba(5, 150, 105, 0.25)" }
     ];
 
     const ds = names.map((n, i) => {
@@ -2322,21 +2140,21 @@ PG.charts = {
           legend: {
             position: "top",
             labels: {
-              color: "#cad8ee",
-              font: { family: "'JetBrains Mono', monospace", size: 10.5 },
+              color: "#374151",
+              font: { family: "Inter, sans-serif", size: 11 },
               boxWidth: 14,
               usePointStyle: true,
               pointStyle: "line"
             }
           },
           tooltip: {
-            backgroundColor: "rgba(4, 10, 24, 0.95)",
-            borderColor: "rgba(0, 240, 255, 0.35)",
+            backgroundColor: "#ffffff",
+            borderColor: "#e2e8f0",
             borderWidth: 1,
-            titleColor: "#00f0ff",
-            titleFont: { family: "'Orbitron', monospace", size: 11 },
-            bodyColor: "#f1f6ff",
-            bodyFont: { family: "'JetBrains Mono', monospace", size: 10.5 },
+            titleColor: "#111827",
+            titleFont: { family: "Inter, sans-serif", size: 11.5, weight: "600" },
+            bodyColor: "#374151",
+            bodyFont: { family: "Inter, sans-serif", size: 11.5 },
             padding: 10,
             callbacks: {
               label: function(c) {
@@ -2351,23 +2169,23 @@ PG.charts = {
             title: {
               display: true,
               text: "Treatment Time (minutes)",
-              color: "#748ba7",
-              font: { family: "'JetBrains Mono', monospace", size: 10.5, weight: "600" }
+              color: "#6b7280",
+              font: { family: "Inter, sans-serif", size: 10.5, weight: "600" }
             },
-            grid: { color: "rgba(255, 255, 255, 0.05)" },
-            ticks: { color: "#748ba7", font: { family: "'JetBrains Mono', monospace", size: 10 } }
+            grid: { color: "rgba(15, 23, 42, 0.06)" },
+            ticks: { color: "#6b7280", font: { family: "Inter, sans-serif", size: 10 } }
           },
           y: {
             title: {
               display: true,
               text: "Relative Concentration (C / C₀)",
-              color: "#748ba7",
-              font: { family: "'JetBrains Mono', monospace", size: 10.5, weight: "600" }
+              color: "#6b7280",
+              font: { family: "Inter, sans-serif", size: 10.5, weight: "600" }
             },
             min: 0,
             max: 1.05,
-            grid: { color: "rgba(255, 255, 255, 0.05)" },
-            ticks: { color: "#748ba7", font: { family: "'JetBrains Mono', monospace", size: 10 } }
+            grid: { color: "rgba(15, 23, 42, 0.06)" },
+            ticks: { color: "#6b7280", font: { family: "Inter, sans-serif", size: 10 } }
           }
         }
       },
@@ -2384,12 +2202,12 @@ PG.charts = {
         datasets: [
           {
             type: "line", label: "Model Bateman Kinetics", data: model,
-            borderColor: "#00f0ff", pointRadius: 0, tension: 0.25, fill: false,
+            borderColor: "#2563eb", pointRadius: 0, tension: 0.25, fill: false,
             borderWidth: 2
           },
           {
             type: "scatter", label: "Empirical Reference", data: obs,
-            backgroundColor: "#fff", pointRadius: 4.5, borderColor: "#00f0ff", borderWidth: 1.5
+            backgroundColor: "#fff", pointRadius: 4.5, borderColor: "#2563eb", borderWidth: 1.5
           }
         ]
       },
@@ -2397,19 +2215,19 @@ PG.charts = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: "#cad8ee", font: { family: "'JetBrains Mono', monospace", size: 10 } } }
+          legend: { labels: { color: "#374151", font: { family: "Inter, sans-serif", size: 11 } } }
         },
         scales: {
           x: {
             type: "linear",
-            title: { display: true, text: "Time (min)", color: "#748ba7", font: { family: "'JetBrains Mono', monospace", size: 10 } },
-            grid: { color: "rgba(255, 255, 255, 0.05)" },
-            ticks: { color: "#748ba7" }
+            title: { display: true, text: "Time (min)", color: "#6b7280", font: { family: "Inter, sans-serif", size: 10 } },
+            grid: { color: "rgba(15, 23, 42, 0.06)" },
+            ticks: { color: "#6b7280" }
           },
           y: {
-            title: { display: true, text: "C / C₀", color: "#748ba7", font: { family: "'JetBrains Mono', monospace", size: 10 } },
-            grid: { color: "rgba(255, 255, 255, 0.05)" },
-            ticks: { color: "#748ba7" }
+            title: { display: true, text: "C / C₀", color: "#6b7280", font: { family: "Inter, sans-serif", size: 10 } },
+            grid: { color: "rgba(15, 23, 42, 0.06)" },
+            ticks: { color: "#6b7280" }
           }
         }
       }
@@ -2456,22 +2274,22 @@ PG.mol = {
           fontSizeSmall: 10.5,
           padding: 24,
           themes: {
-            dark: {
-              C: '#e8f2ff',
-              O: '#ff4d6d',
-              N: '#00f0ff',
-              F: '#10b981',
-              CL: '#10b981',
-              BR: '#c084fc',
-              I: '#f472b6',
-              P: '#fb923c',
-              S: '#fbbf24',
-              H: '#748ba7',
-              BACKGROUND: '#030816'
+            light: {
+              C: '#1f2937',
+              O: '#dc2626',
+              N: '#2563eb',
+              F: '#059669',
+              CL: '#059669',
+              BR: '#7c3aed',
+              I: '#db2777',
+              P: '#ea580c',
+              S: '#b45309',
+              H: '#9ca3af',
+              BACKGROUND: '#fbfcfe'
             }
           }
         });
-        drawer.draw(t, canvasId, "dark", false);
+        drawer.draw(t, canvasId, "light", false);
       }, function(e) {
         PG.ui.toast("2D parse: " + (e && e.message || e), true);
       });
@@ -2488,20 +2306,20 @@ PG.mol = {
     if (!el) return;
 
     if (!navigator.onLine) {
-      if (note) note.textContent = "OFFLINE — Procedural 3D Conformer active. (PubChem unavailable).";
+      if (note) note.textContent = "Offline — procedural 3D conformer active (PubChem unavailable).";
       if (led) led.classList.add("off");
       PG.mol.buildProcedural3D(smiles);
       return;
     }
 
-    if (note) note.textContent = "Retrieving authoritative 3D conformer from PubChem PUG REST…";
+    if (note) note.textContent = "Retrieving 3D conformer from PubChem…";
 
     fetch("https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/" + encodeURIComponent(smiles) + "/record/SDF/?record_type=3d")
       .then(function(r) { if (!r.ok) throw new Error("PubChem HTTP " + r.status); return r.text(); })
       .then(function(sdf) {
         if (!sdf || sdf.indexOf("<Error>") !== -1) throw new Error("No 3D SDF found");
         el.innerHTML = "";
-        PG.mol.v3 = $3Dmol.createViewer(el, { backgroundColor: "#020610" });
+        PG.mol.v3 = $3Dmol.createViewer(el, { backgroundColor: "#fbfcfe" });
         PG.mol.v3.addModel(sdf, "sdf");
         
         // Ball and Stick RasMol Scheme
@@ -2526,7 +2344,7 @@ PG.mol = {
           if (ins) {
             ins.innerHTML =
               '<div style="color:var(--cyan);font-weight:700">ATOM #' + ser + ' · ' + el + '</div>' +
-              '<div style="margin-top:6px;font-size:11px;color:#fff">X: ' + (atom.x?atom.x.toFixed(3):"0") +
+              '<div style="margin-top:6px;font-size:11px;color:#111827">X: ' + (atom.x?atom.x.toFixed(3):"0") +
               ' &nbsp; Y: ' + (atom.y?atom.y.toFixed(3):"0") + ' &nbsp; Z: ' + (atom.z?atom.z.toFixed(3):"0") + '</div>' +
               '<div style="margin-top:4px;font-size:10px;color:var(--muted)">Atomic index ' + (atom.index || ser) + '</div>';
           }
@@ -2534,12 +2352,12 @@ PG.mol = {
 
         PG.mol.v3.zoomTo();
         PG.mol.v3.render();
-        if (note) note.textContent = "Authoritative PubChem 3D Conformer loaded. Interactive orbit & pick active.";
+        if (note) note.textContent = "PubChem 3D conformer loaded. Drag to rotate, click atoms for details.";
         if (led) led.classList.remove("off");
       })
       .catch(function(err) {
         console.warn("PubChem fetch fallback:", err);
-        if (note) note.textContent = "PubChem 3D unavailable. Procedural WebGL 3D conformer active.";
+        if (note) note.textContent = "PubChem 3D unavailable. Showing a generated 3D conformer instead.";
         if (led) led.classList.add("off");
         PG.mol.buildProcedural3D(smiles);
       });
@@ -2563,14 +2381,14 @@ PG.mol = {
     el.appendChild(ren.domElement);
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const p1 = new THREE.PointLight(0x00f0ff, 1.5, 50);
+    const p1 = new THREE.PointLight(0x2563eb, 1.5, 50);
     p1.position.set(10, 15, 20);
     scene.add(p1);
 
     // Procedural pseudo-molecule generator based on formula/smiles
     const molGroup = new THREE.Group();
     const atomCount = Math.min(Math.max(smiles.length / 2, 8), 24);
-    const atomColors = [0xe8f2ff, 0x00f0ff, 0xff3366, 0x10b981, 0xfbbf24];
+    const atomColors = [0xe8f2ff, 0x2563eb, 0xdc2626, 0x059669, 0xd97706];
     const atomCoords = [];
 
     for (let i = 0; i < atomCount; i++) {
@@ -2593,7 +2411,7 @@ PG.mol = {
         const pB = atomCoords[i];
         const dist = pA.distanceTo(pB);
         const cylGeo = new THREE.CylinderGeometry(0.18, 0.18, dist, 12);
-        const cylMat = new THREE.MeshStandardMaterial({ color: 0x748ba7, roughness: 0.4 });
+        const cylMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 0.4 });
         const cyl = new THREE.Mesh(cylGeo, cylMat);
         cyl.position.copy(pA.clone().add(pB).multiplyScalar(0.5));
         cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pB.clone().sub(pA).normalize());
@@ -2638,7 +2456,7 @@ PG.three = {
     const h = container.clientHeight || 330;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x020610, 0.014);
+    scene.fog = new THREE.FogExp2(0xf8fafc, 0.012);
 
     const cam = new THREE.PerspectiveCamera(42, w / h, 0.1, 1000);
     cam.position.set(0, 10, 52);
@@ -2652,18 +2470,18 @@ PG.three = {
     container.appendChild(ren.domElement);
 
     // Dynamic Atmosphere & Lighting
-    const amb = new THREE.AmbientLight(0x08152e, 1.4);
+    const amb = new THREE.AmbientLight(0xffffff, 1.1);
     scene.add(amb);
-    const pLight = new THREE.PointLight(0x00f0ff, 3.8, 80);
+    const pLight = new THREE.PointLight(0x2563eb, 3.8, 80);
     scene.add(pLight);
     PG.three.pLight = pLight;
 
     // Outer Quartz Cylinder Vessel
     const cylGeo = new THREE.CylinderGeometry(14, 14, 34, 48, 1, true);
     const cylMat = new THREE.MeshPhysicalMaterial({
-      color: 0x00f0ff,
+      color: 0x94a3b8,
       transparent: true,
-      opacity: 0.14,
+      opacity: 0.18,
       roughness: 0.06,
       metalness: 0.1,
       transmission: 0.88,
@@ -2675,7 +2493,7 @@ PG.three = {
 
     // Anodized CNC Flanges
     const capGeo = new THREE.CylinderGeometry(15.2, 15.2, 2.0, 48);
-    const capMat = new THREE.MeshStandardMaterial({ color: 0x0a1426, roughness: 0.25, metalness: 0.9 });
+    const capMat = new THREE.MeshStandardMaterial({ color: 0xb7bfc9, roughness: 0.35, metalness: 0.75 });
     const topCap = new THREE.Mesh(capGeo, capMat);
     topCap.position.y = 17;
     scene.add(topCap);
@@ -2685,7 +2503,7 @@ PG.three = {
 
     // Central Immersion Emitter (UV Lamp / Plasma Jet)
     const coreGeo = new THREE.CylinderGeometry(1.9, 1.9, 33.6, 32);
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.95 });
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0x2563eb, transparent: true, opacity: 0.95 });
     const core = new THREE.Mesh(coreGeo, coreMat);
     scene.add(core);
     PG.three.core = core;
@@ -2693,9 +2511,9 @@ PG.three = {
     // Radiant Corona Sheath
     const glowGeo = new THREE.CylinderGeometry(3.6, 3.6, 33, 32, 1, true);
     const glowMat = new THREE.MeshBasicMaterial({
-      color: 0x00f0ff,
+      color: 0x2563eb,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.14,
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending
     });
@@ -2719,11 +2537,10 @@ PG.three = {
     }
     fGeo.setAttribute("position", new THREE.BufferAttribute(fPos, 3));
     const fMat = new THREE.PointsMaterial({
-      color: 0x00f0ff,
-      size: 2.2,
+      color: 0x64748b,
+      size: 2.0,
       transparent: true,
-      opacity: 0.7,
-      blending: THREE.AdditiveBlending
+      opacity: 0.55
     });
     const fluid = new THREE.Points(fGeo, fMat);
     scene.add(fluid);
@@ -2734,11 +2551,10 @@ PG.three = {
     for (let r = 0; r < 5; r++) {
       const rGeo = new THREE.RingGeometry(2.4, 2.9, 40);
       const rMat = new THREE.MeshBasicMaterial({
-        color: 0x00f0ff,
+        color: 0x2563eb,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.45,
-        blending: THREE.AdditiveBlending
+        opacity: 0.35
       });
       const ring = new THREE.Mesh(rGeo, rMat);
       ring.rotation.x = Math.PI / 2;
@@ -2762,11 +2578,10 @@ PG.three = {
     }
     bubGeo.setAttribute("position", new THREE.BufferAttribute(bubPos, 3));
     const bubMat = new THREE.PointsMaterial({
-      color: 0xc084fc,
-      size: 3.5,
+      color: 0x7c3aed,
+      size: 3.0,
       transparent: true,
-      opacity: 0.8,
-      blending: THREE.AdditiveBlending
+      opacity: 0.6
     });
     const bubPoints = new THREE.Points(bubGeo, bubMat);
     bubPoints.visible = false;
@@ -2840,9 +2655,9 @@ PG.three = {
 
       // Method-specific physical animations
       if (PG.three.method === "uv") {
-        core.material.color.setHex(0x00f0ff);
-        glow.material.color.setHex(0x00f0ff);
-        pLight.color.setHex(0x00f0ff);
+        core.material.color.setHex(0x2563eb);
+        glow.material.color.setHex(0x2563eb);
+        pLight.color.setHex(0x2563eb);
         pLight.intensity = PG.three.isRunning ? 5.5 : 3.8;
         core.material.opacity = 0.88 + Math.sin(t * 6) * 0.12;
         glow.scale.setScalar(1 + Math.sin(t * 4) * 0.1);
@@ -2855,9 +2670,9 @@ PG.three = {
           r.material.opacity = 0.5 - (s - 1) * 0.5;
         });
       } else if (PG.three.method === "ec") {
-        core.material.color.setHex(0xc084fc);
-        glow.material.color.setHex(0xc084fc);
-        pLight.color.setHex(0xc084fc);
+        core.material.color.setHex(0x8b5cf6);
+        glow.material.color.setHex(0x8b5cf6);
+        pLight.color.setHex(0x8b5cf6);
         pLight.intensity = 3.2;
         ringGroup.visible = false;
         bubPoints.visible = true;
@@ -2869,9 +2684,9 @@ PG.three = {
         }
         bubPoints.geometry.attributes.position.needsUpdate = true;
       } else { // Plasma
-        core.material.color.setHex(0xfbbf24);
-        glow.material.color.setHex(0xfbbf24);
-        pLight.color.setHex(0xfbbf24);
+        core.material.color.setHex(0xd97706);
+        glow.material.color.setHex(0xd97706);
+        pLight.color.setHex(0xd97706);
         pLight.intensity = Math.random() > 0.1 ? 4.8 : 2.0;
         core.material.opacity = Math.random() > 0.12 ? 0.98 : 0.4;
         glow.scale.setScalar(0.95 + Math.random() * 0.18);
@@ -2898,20 +2713,20 @@ PG.three = {
     const fb = document.getElementById("rFluxBadge");
     if (!mb) return;
     if (m === "uv") {
-      mb.className = "chip cyan"; mb.textContent = "UV / H₂O₂ PHOTOLYSIS";
-      if (fb) fb.textContent = "PHOTON FLUX: 254 nm";
+      mb.className = "chip cyan"; mb.textContent = "UV / H₂O₂ photolysis";
+      if (fb) fb.textContent = "Photon flux: 254 nm";
     } else if (m === "ec") {
-      mb.className = "chip purple"; mb.textContent = "ELECTROCHEMICAL OXIDATION";
-      if (fb) fb.textContent = "ANODIC EFFICIENCY η = 0.20";
+      mb.className = "chip purple"; mb.textContent = "Electrochemical oxidation";
+      if (fb) fb.textContent = "Anodic efficiency η = 0.20";
     } else {
-      mb.className = "chip amber"; mb.textContent = "NON-THERMAL PLASMA";
-      if (fb) fb.textContent = "DISCHARGE FLUX: 10 W";
+      mb.className = "chip amber"; mb.textContent = "Non-thermal plasma";
+      if (fb) fb.textContent = "Discharge flux: 10 W";
     }
   },
 
   burst: function() {
     if (!PG.three.scene) return;
-    PG.ui.toast("⚡ High-density •OH radical cascade injected into chamber!");
+    PG.ui.toast("High-density •OH radical burst injected.");
     const count = 200;
     const bGeo = new THREE.BufferGeometry();
     const pos = new Float32Array(count * 3);
@@ -2924,11 +2739,10 @@ PG.three = {
     }
     bGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     const bMat = new THREE.PointsMaterial({
-      color: 0x00f0ff,
-      size: 3.2,
+      color: 0x2563eb,
+      size: 3.0,
       transparent: true,
-      opacity: 1,
-      blending: THREE.AdditiveBlending
+      opacity: 0.9
     });
     const burstPoints = new THREE.Points(bGeo, bMat);
     PG.three.scene.add(burstPoints);
@@ -3022,12 +2836,12 @@ PG.app = {
     btn.disabled = true;
     
     const stages = [
-      "1/6 VALIDATING CHEMICAL STOICHIOMETRY",
-      "2/6 PHOTOCHEMISTRY & EXTINCTION OPTICS",
-      "3/6 RADICAL PSEUDO-STEADY-STATE",
-      "4/6 BATEMAN KINETIC MATRIX EXPONENTIATION",
-      "5/6 BENIGNI-BOSSA HAZARD INVERSION SCREEN",
-      "6/6 ENERGETIC FIGURES-OF-MERIT & EEO"
+      "1/6 Validating chemical stoichiometry",
+      "2/6 Photochemistry & extinction optics",
+      "3/6 Radical pseudo-steady-state",
+      "4/6 Bateman kinetic matrix exponentiation",
+      "5/6 Benigni-Bossa hazard inversion screen",
+      "6/6 Energetic figures-of-merit & EEO"
     ];
     
     const scanner = u.$("stageScanner");
@@ -3041,7 +2855,7 @@ PG.app = {
     const tick = function() {
       if (idx < stages.length) {
         const pct = Math.round(((idx + 1) / stages.length) * 100);
-        u.$("stStage").innerHTML = '<i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)"></i> ' + stages[idx];
+        u.$("stStage").innerHTML = '<i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--cyan)"></i> ' + stages[idx];
         if (scanName) scanName.textContent = stages[idx];
         if (scanPct) scanPct.textContent = pct + "%";
         if (scanBar) scanBar.style.width = pct + "%";
@@ -3064,11 +2878,11 @@ PG.app = {
         u.$("stMethod").textContent = P.method.toUpperCase();
         u.$("stLam").textContent = "λ=" + P.lam + " nm";
         u.$("stCross").textContent = "Bateman↔RK4 Δ=" + res.cross.toExponential(1);
-        u.$("stStage").innerHTML = '<i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)"></i> SIMULATION COMPLETE';
+        u.$("stStage").innerHTML = '<i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green)"></i> Simulation complete';
         u.toast("Run complete: Hazard inversion & kinetics computed");
       } catch (e) {
         u.toast("Simulation failed: " + e.message, true);
-        u.$("stStage").innerHTML = '<i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red)"></i> ERROR';
+        u.$("stStage").innerHTML = '<i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);"></i> Error';
       }
 
       if (PG.three) PG.three.isRunning = false;
@@ -3179,9 +2993,9 @@ PG.app = {
         <div class="dossier-stat"><div class="d-label">Hazard Priority Score</div><div class="d-val" style="color:var(--cyan)">${scr.pri}</div></div>
       </div>
       <div style="margin-top:14px;padding:12px;background:rgba(2,6,16,0.6);border-radius:6px;border:1px solid var(--border)">
-        <div class="ml" style="font-size:9.5px">Aquatic Toxicity Hazard Classification:</div>
-        <div style="font:700 12.5px var(--mono);color:#fff;margin-top:4px">Class ${scr.aq} — ${PG.tox.aqName(scr.aq)}</div>
-        <div class="ml" style="font-size:9.5px;margin-top:10px">Structural Alerts Flagged:</div>
+        <div class="ml" style="font-size:11px">Aquatic Toxicity Hazard Classification:</div>
+        <div style="font:700 12.5px var(--mono);color:#111827;margin-top:4px">Class ${scr.aq} — ${PG.tox.aqName(scr.aq)}</div>
+        <div class="ml" style="font-size:11px;margin-top:10px">Structural Alerts Flagged:</div>
         ${alertsHTML}
       </div>
     `;
@@ -3560,18 +3374,18 @@ addEventListener("DOMContentLoaded", function() {
   u.$("vSpin").onclick = function() {
     if (PG.mol.v3) {
       PG.mol.isSpinning = !PG.mol.isSpinning;
-      this.textContent = PG.mol.isSpinning ? "Auto-Spin: ON" : "Auto-Spin: OFF";
+      this.textContent = PG.mol.isSpinning ? "Auto-Spin: ON" : "Auto-spin: Off";
       if (PG.mol.isSpinning) PG.mol.v3.spin("y");
       else PG.mol.v3.stopSpin();
     } else if (PG.mol.proceduralMesh) {
       PG.mol.isSpinning = !PG.mol.isSpinning;
-      this.textContent = PG.mol.isSpinning ? "Auto-Spin: ON" : "Auto-Spin: OFF";
+      this.textContent = PG.mol.isSpinning ? "Auto-Spin: ON" : "Auto-spin: Off";
     }
   };
   u.$("vReset").onclick = function() {
     if (!PG.mol.v3) return;
     PG.mol.isSpinning = false;
-    u.$("vSpin").textContent = "Auto-Spin: OFF";
+    u.$("vSpin").textContent = "Auto-spin: Off";
     PG.mol.v3.stopSpin();
     PG.mol.v3.zoomTo();
     PG.mol.v3.render();
@@ -3597,7 +3411,7 @@ addEventListener("DOMContentLoaded", function() {
     const isPres = document.body.classList.contains("present");
     this.innerHTML = isPres
       ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> EXIT PRESENT'
-      : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3l14 9-14 9V3z"/></svg> PRESENT MODE';
+      : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 3l14 9-14 9V3z"/></svg> Present mode';
     
     if (isPres) {
       document.querySelector('[data-pg="workspace"]').click();
