@@ -1698,6 +1698,9 @@ PG.engine = {
   run: function(P, pol) {
     const C = PG.const;
     const lam = P.lam, V = P.V;
+    // Normalize method id: accept legacy "plasma" as well as the dropdown value "pl"
+    if (P.method === "plasma") P.method = "pl";
+    const isPlasma = (P.method === "pl");
     const CHP = (P.method === "uv") ? (P.HP * 1e-3) : 0;
     const C0MgL = P.C0;
     const MW_pol = PG.mw(pol.formula);
@@ -1726,7 +1729,7 @@ PG.engine = {
       g = 2 * PG.data.h2o2.phi * I0 * f_HP * S;
     } else if (P.method === "ec") {
       g = P.eta * (P.Ie / 1000) / (C.F * V);
-    } else {
+    } else if (isPlasma) {
       g = P.Gpl * 1e-6 * P.Pp / V;
     }
 
@@ -2134,6 +2137,7 @@ PG.mol = {
 /* ============ PG.ui — High-Precision UI Helpers ============ */
 PG.ui = {
   $: function(id) { return document.getElementById(id); },
+  mLabel: function(m) { return ({uv:"UV/H\u2082O\u2082", ec:"EC", pl:"Plasma", plasma:"Plasma"})[m] || String(m).toUpperCase(); },
   toast: function(msg, isErr) {
     const d = document.createElement("div");
     d.className = "tst" + (isErr ? " err" : "");
@@ -2214,7 +2218,7 @@ PG.app = {
         PG.app.render(res, pol, P);
         PG.app.save(P, pol, res);
 
-        u.$("stMethod").textContent = P.method.toUpperCase();
+        u.$("stMethod").textContent = u.mLabel(P.method);
         u.$("stLam").textContent = "\u03bb=" + P.lam + " nm";
         u.$("stStage").innerHTML = '<i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green)"></i> Simulation complete';
         u.toast("Run complete \u2014 hazard window and safe discharge time computed");
@@ -2249,7 +2253,7 @@ PG.app = {
     PG.charts.renderCallouts(res, pol);
     if (u.$("liveBadge")) u.$("liveBadge").classList.remove("hide");
     if (u.$("dataSub")) u.$("dataSub").textContent =
-      pol.name + " \u00b7 " + P.method.toUpperCase() + " \u00b7 t_safe = " + res.tSafe_min.toFixed(0) + " min";
+      pol.name + " \u00b7 " + PG.ui.mLabel(P.method) + " \u00b7 t_safe = " + res.tSafe_min.toFixed(0) + " min";
 
     // Hazard Inversion Banner
     const warn = u.$("warn");
@@ -2325,7 +2329,7 @@ PG.app = {
     s.forEach(function(x, i) {
       tb.insertAdjacentHTML("beforeend",
         "<tr><td><code>" + x.id + "</code></td><td>" + x.ts + "</td><td><b>" + x.poll +
-        "</b></td><td><span class='chip gray'>" + x.method.toUpperCase() + "</span></td><td><b style='color:var(--cyan)'>" + x.tSafe_min +
+        "</b></td><td><span class='chip gray'>" + PG.ui.mLabel(x.method) + "</span></td><td><b style='color:var(--cyan)'>" + x.tSafe_min +
         " min</b></td><td><button class='btn sm pri' data-r='" + i + "'>RESTORE &amp; RUN</button></td></tr>");
     });
     tb.querySelectorAll("[data-r]").forEach(function(b) {
@@ -2484,7 +2488,7 @@ addEventListener("DOMContentLoaded", function() {
     if (!PG.app.res) return u.toast("Execute simulation before exporting data", true);
     const r = PG.app.res;
     let csv = "# PlasmaGuard v2.0 Kinetics Dataset\n";
-    csv += "# Target: " + PG.app.pol.name + " | Method: " + PG.app.P.method.toUpperCase() + " | t_safe: " + r.tSafe_min.toFixed(1) + " min\n";
+    csv += "# Target: " + PG.app.pol.name + " | Method: " + PG.ui.mLabel(PG.app.P.method) + " | t_safe: " + r.tSafe_min.toFixed(1) + " min\n";
     csv += "t_min,Parent_" + PG.app.pol.id + "," + PG.app.pol.tps.map(t => t.name.replace(/,/g, "")).join(",") + "\n";
     r.t.forEach(function(tm, i) {
       csv += tm.toFixed(2) + "," + r.C[i].map(c => c.toExponential(4)).join(",") + "\n";
@@ -2632,8 +2636,8 @@ addEventListener("DOMContentLoaded", function() {
     }
   });
 
-  // Initial Load
-  const initPol = PG.data.pollutants[0];
+  // Initial Load — match the default selection of the pollutant dropdown (Diclofenac)
+  const initPol = PG.data.pollutants.find(p => p.id === ps.value) || PG.data.pollutants[0];
   PG.app.pol = initPol;
   PG.mol.d2("mol2d", initPol.smiles);
   if (u.$("cSrc")) u.$("cSrc").textContent = initPol.src;
